@@ -20,3 +20,16 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('/profile', 'profile')->name('profile');
     Route::post('/logout', 'logout')->name('logout');
 });
+
+Route::get('/admin/dashboard', function () {
+    return view('admin.dashboard');
+})->middleware(['auth.jwt', 'role:1']);
+
+
+Route::get('/user/dashboard', function () {
+    return view('user.dashboard');
+})->middleware(['auth', 'role:2']);
+
+Route::get('/check-session', function () {
+    return session()->all();
+});
