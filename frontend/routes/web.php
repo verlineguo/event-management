@@ -1,11 +1,11 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/welcome', function () {
-    return view('welcome');
-})->name('welcome');
+Route::redirect('/', '/login');
+
 
 Route::controller(AuthController::class)->group(function () {
     // Show forms
@@ -21,9 +21,22 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/logout', 'logout')->name('logout');
 });
 
-Route::get('/admin/dashboard', function () {
-    return view('admin.dashboard');
-})->middleware(['auth.jwt', 'role:1']);
+Route::prefix('admin')->middleware(['auth.jwt', 'role:admin'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('admin.dashboard');
+    });
+
+    Route::controller(UserController::class)->group( function() {
+        Route::get('/user',  'index')->name('admin.user.index');
+        Route::get('/user/create',  'create')->name('admin.user.create');
+        Route::post('/user',  'store')->name('admin.user.store');
+        Route::get('/user/{id}/edit',  'edit')->name('admin.user.edit');
+        Route::put('/user/{id}',  'update')->name('admin.user.update');
+        Route::delete('/user/{id}',  'destroy')->name('admin.user.destroy');
+    });
+
+
+});
 
 
 Route::get('/user/dashboard', function () {
