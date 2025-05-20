@@ -22,56 +22,44 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        try {
-            $response = Http::post($this->apiUrl . '/login', [
-                'email' => $request->email,
-                'password' => $request->password,
+        $response = Http::post($this->apiUrl . '/login', [
+            'email' => $request->email,
+            'password' => $request->password,
+        ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            session([
+                'jwt_token' => $data['token'],
+                'user_email' => $data['user']['email'],
+                'user_role_id' => $data['user']['role_id'],
+                'user_role_name' => $data['user']['role_name'],
             ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-
-                // Pastikan token ada sebelum menyimpan ke session
-                if (isset($data['token']) && !empty($data['token'])) {
-                    session([
-                        'jwt_token' => $data['token'],
-                        'user_email' => $data['user']['email'],
-                        'user_role' => $data['user']['role_id'], // Tambahkan fallback jika role_id tidak ada
-                    ]);
-
-                    Log::info('JWT token stored successfully:', ['token_length' => strlen($data['token'])]);
-
-                    // Periksa apakah role_id valid untuk redirect
-                    if (isset($data['user']['role_id'])) {
-                        return $this->redirectToDashboard($data['user']['role_id']);
-                    } else {
-                        Log::error('Role ID missing in user data');
-                        return redirect('/welcome');
-                    }
-                } else {
-                    Log::error('Token is missing in API response', ['response' => $data]);
-                    return back()->withErrors(['message' => 'Authentication token missing']);
-                }
+            // Periksa apakah role_id valid untuk redirect
+            if (isset($data['user']['role_name'])) {
+                return $this->redirectToDashboard($data['user']['role_name']);
             } else {
-                Log::error('Login API failed', ['status' => $response->status(), 'response' => $response->body()]);
-                return back()->withErrors(['message' => 'Login failed: ' . ($response->json()['error'] ?? 'Unknown error')]);
+                Log::error('Role ID missing in user data');
+                return redirect('/welcome');
             }
-        } catch (\Exception $e) {
-            Log::error('Exception during login', ['message' => $e->getMessage()]);
-            return back()->withErrors(['message' => 'Login service unavailable']);
+        } else {
+            Log::error('Login API failed', ['status' => $response->status(), 'response' => $response->body()]);
+            return back()->withErrors(['message' => 'Login failed: ' . ($response->json()['error'] ?? 'Unknown error')]);
         }
     }
 
-    protected function redirectToDashboard($role_id)
+    protected function redirectToDashboard($role_name)
     {
-        switch ($role_id) {
-            case 1:
+        switch ($role_name) {
+            case 'admin':
                 return redirect('/admin/dashboard');
-            case 2:
+            case 'finance':
                 return redirect('/finance/dashboard');
-            case 3:
+            case 'committee':
                 return redirect('/committee/dashboard');
-            case 4:
+            case 'member':
                 return redirect('/member/dashboard');
             default:
                 return redirect('/welcome');

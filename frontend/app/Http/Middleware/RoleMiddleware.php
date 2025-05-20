@@ -12,8 +12,9 @@ class RoleMiddleware
             return redirect('/login');
         }
 
-        $userRole = session('user_role');
+        $userRole = session('user_role_name');
         
+
         if (!in_array($userRole, $roles)) {
             abort(403, 'Unauthorized access');
         }

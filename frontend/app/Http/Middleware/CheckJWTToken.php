@@ -31,7 +31,7 @@ class CheckJWTToken
             return $next($request);
         } else {
             Log::warning('Token verification failed', ['status' => $response->status()]);
-            session()->forget(['jwt_token', 'user_email', 'user_role']);
+            session()->forget(['jwt_token', 'user_email', 'user_role_id']);
             return redirect('/login')->withErrors(['message' => 'Session expired or invalid']);
         }
     } catch (\Exception $e) {
