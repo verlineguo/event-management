@@ -3,7 +3,10 @@
 @section('content')
     <div class="container-xxl flex-grow-1 container-p-y">
         <!-- Basic Bootstrap Table -->
-        <div class="d-flex justify-content-end mb-5">
+        <div class="d-flex justify-content-between mb-5">
+            <h5 class="fw-bold mb-4">
+                User Management 
+            </h5>
             <a href="{{ route('admin.user.create') }}" class="btn btn-primary">Create</a>
         </div>
 
@@ -40,19 +43,19 @@
 
                                 <td>
                                     <a href="{{ route('admin.user.edit', $user['_id']) }}"
-                                        class="btn btn-sm btn-info">Edit</a>
+                                        class="btn btn-sm btn-info"><i class="bx bx-edit" style="font-size: 18px"></i></a>
                                     <form action="{{ route('admin.user.destroy', $user['_id']) }}" method="POST"
-                                        style="display: inline-block">
+                                        style="display: inline-block" class="delete-form">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger"
-                                            onclick="return confirm('Are you sure?')">Delete</button>
+                                        <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                            data-id="{{ $user['_id'] }}">
+                                            <i class="bx bx-trash" style="font-size: 18px"></i>
+                                        </button>
                                     </form>
                                 </td>
-
                             </tr>
                         @endforeach
-
                     </tbody>
                 </table>
             </div>
@@ -61,6 +64,7 @@
 @endsection
 
 @section('scripts')
+  
     <script>
         $(document).ready(function() {
             $('#users-table').DataTable({
@@ -68,9 +72,47 @@
                 "lengthMenu": [5, 10, 25, 50],
                 "columnDefs": [{
                     "orderable": false,
-                    "targets": 5
+                    "targets": 6 // Sesuaikan dengan kolom Actions (indeks dimulai dari 0)
                 }]
             });
+
+            // SweetAlert for delete confirmation
+            $('.delete-btn').on('click', function() {
+                const form = $(this).closest('form');
+                const userId = $(this).data('id');
+                
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+
+            @if(session('success'))
+                Swal.fire({
+                    title: 'Success!',
+                    text: '{{ session('success') }}',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                });
+            @endif
+
+            @if(session('error'))
+                Swal.fire({
+                    title: 'Error!',
+                    text: '{{ session('error') }}',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            @endif
         });
     </script>
 @endsection

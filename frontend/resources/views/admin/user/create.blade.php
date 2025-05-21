@@ -1,9 +1,9 @@
 @extends('admin.layouts.app')
 @section('content')
     <div class="container-xxl flex-grow-1 container-p-y">
-        <h4 class="fw-bold py-3 mb-4">
-            <span class="text-muted fw-light">User Management /</span> Create User
-        </h4>
+        <h5 class="fw-bold py-3 mb-4">
+            <span class="text-muted fw-light"><a href="{{ route('admin.user.index') }}">User Management </a>/</span> Create User
+        </h5>
 
         <div class="card">
             <h5 class="card-header">Form User</h5>
@@ -18,7 +18,7 @@
                     </div>
                 @endif
 
-                <form action="{{ route('admin.user.store') }}" method="POST">
+                <form id="createUserForm" action="{{ route('admin.user.store') }}" method="POST">
                     @csrf
 
                     <div class="mb-4">
@@ -71,14 +71,12 @@
 
                     <div class="mb-4">
                         <label for="status" class="form-label">Status</label>
-                        <select class="form-select" id="status" name="status" required>
+                        <select class="form-select" id="status" name="status">
                             <option value="">Select Status</option>
                             <option value="1" {{ old('status') == '1' ? 'selected' : '' }}>Active</option>
                             <option value="0" {{ old('status') == '0' ? 'selected' : '' }}>Inactive</option>
                         </select>
                     </div>
-
-
 
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary">
@@ -92,4 +90,52 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tangkap form submit
+            const form = document.getElementById('createUserForm');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You are about to create a new user!",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, create it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Jika user mengkonfirmasi, submit form
+                        form.submit();
+                    }
+                });
+            });
+
+            // Cek jika ada pesan sukses dari session
+            @if(session('success'))
+                Swal.fire({
+                    title: 'Success!',
+                    text: '{{ session('success') }}',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                });
+            @endif
+
+            // Cek jika ada pesan error dari session
+            @if(session('error'))
+                Swal.fire({
+                    title: 'Error!',
+                    text: '{{ session('error') }}',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            @endif
+        });
+    </script>
 @endsection
