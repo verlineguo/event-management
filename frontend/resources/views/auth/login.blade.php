@@ -10,7 +10,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-    <title>Demo: Login Basic - Pages | Sneat - Bootstrap Dashboard FREE</title>
+    <title>Login</title>
 
     <meta name="description" content="" />
 
@@ -168,7 +168,7 @@
 
               <p class="text-center">
                 <span>New on our platform?</span>
-                <a href="auth-register-basic.html">
+                <a href="{{ route('register') }}">
                   <span>Create an account</span>
                 </a>
               </p>
@@ -179,16 +179,6 @@
       </div>
     </div>
 
-    <!-- / Content -->
-
-    <div class="buy-now">
-      <a
-        href="https://themeselection.com/item/sneat-dashboard-pro-bootstrap/"
-        target="_blank"
-        class="btn btn-danger btn-buy-now"
-        >Upgrade to Pro</a
-      >
-    </div>
 
     <!-- Core JS -->
 
@@ -209,6 +199,33 @@
 
     <script src="{{ 'assets/js/main.js' }}"></script>
 
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        @if ($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Registration Failed',
+                html: `{!! implode('<br>', $errors->all()) !!}`,
+                confirmButtonText: 'Try Again'
+            });
+        @endif
+
+        @if (session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Registration Successful!',
+                text: '{{ session('success') }}',
+                confirmButtonText: 'Continue'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = "{{ url('/login') }}";
+                }
+            });
+        @endif
+    </script>
+    
     <!-- Page JS -->
 
     <!-- Place this tag before closing body tag for github widget button. -->

@@ -74,15 +74,23 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'password' => 'required|min:6|confirmed',
+            'terms' => 'required',
         ]);
+
+        
+
+
+       
 
         $response = Http::post($this->apiUrl . '/register', [
             'email' => $request->email,
             'password' => $request->password,
+            'name' => $request->name,
         ]);
-
+       
         if ($response->successful()) {
             return redirect('/login')->with('success', 'Registration successful');
         }
@@ -95,31 +103,32 @@ class AuthController extends Controller
         if (!session('jwt_token')) {
             return redirect('/login');
         }
-
+        
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . session('jwt_token'),
         ])->get($this->apiUrl . '/profile');
-
+        
         if ($response->successful()) {
             $roleResponse = Http::withHeaders([
                 'Authorization' => 'Bearer ' . session('jwt_token'),
             ])->get($this->apiUrl . '/user-role');
-
+            
             $roleData = $roleResponse->json();
-
+            
             return view('auth.profile', [
                 'user' => $response->json(),
                 'email' => session('user_email'),
                 'role_id' => $roleData['role_id'],
+                'role_name' => session('user_role_name'),
             ]);
         }
-
-        return redirect('/login')->withErrors(['message' => 'Please login']);
+        
+        return redirect('/login')->withErrors(['message' => 'Please login to view your profile']);
     }
-
+    
     public function logout()
     {
-        session()->forget(['jwt_token', 'user_email']);
+        session()->forget(['jwt_token', 'user_email', 'user_role_id', 'user_role_name']);
         return redirect('/login');
     }
 }

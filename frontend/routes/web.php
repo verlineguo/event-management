@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\AdminMainController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GuestMainController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,8 +24,8 @@ Route::controller(AuthController::class)->group(function () {
 });
 
 Route::prefix('admin')->middleware(['auth.jwt', 'role:admin'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
+    Route::controller(AdminMainController::class)->group(function() {
+        Route::get('/dashboard', 'index')->name('admin.dashboard');
     });
 
     Route::controller(UserController::class)->group( function() {
@@ -38,6 +40,11 @@ Route::prefix('admin')->middleware(['auth.jwt', 'role:admin'])->group(function (
 
 });
 
+Route::prefix('guest')->group(function () {
+    Route::controller(GuestMainController::class)->group(function() {
+        Route::get('/home', 'index')->name('guest.home');
+    });
+});
 
 Route::get('/user/dashboard', function () {
     return view('user.dashboard');
