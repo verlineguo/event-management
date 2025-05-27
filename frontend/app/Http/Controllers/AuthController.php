@@ -32,6 +32,7 @@ class AuthController extends Controller
 
             session([
                 'jwt_token' => $data['token'],
+                'user_id' => $data['user']['_id'],
                 'user_email' => $data['user']['email'],
                 'user_role_id' => $data['user']['role_id'],
                 'user_role_name' => $data['user']['role_name'],
@@ -60,7 +61,7 @@ class AuthController extends Controller
             case 'committee':
                 return redirect('/committee/dashboard');
             case 'member':
-                return redirect('/member/dashboard');
+                return redirect('/member/home');
             default:
                 return redirect('/welcome');
         }

@@ -38,6 +38,8 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}" />
 
     <!-- Page CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css" />
+    @yield('styles')
 
     <!-- Helpers -->
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
@@ -54,14 +56,14 @@
         <div class="layout-container">
             <!-- Menu -->
 
-            @include('comittee.layouts.sidebar')
+            @include('committee.layouts.sidebar')
             <!-- / Menu -->
 
             <!-- Layout container -->
             <div class="layout-page">
                 <!-- Navbar -->
 
-                @include('comittee.layouts.navbar')
+                @include('committee.layouts.navbar')
 
                 <!-- / Navbar -->
 
@@ -73,7 +75,7 @@
                 <!-- / Content -->
 
                 <!-- Footer -->
-                @include('comittee.layouts.footer')
+                @include('committee.layouts.footer')
                 <!-- / Footer -->
 
                 <div class="content-backdrop fade"></div>
@@ -88,7 +90,7 @@
     </div>
     <!-- / Layout wrapper -->
 
- 
+
 
     <!-- Core JS -->
 
@@ -115,6 +117,14 @@
 
     <!-- Place this tag before closing body tag for github widget button. -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    @yield('scripts')
+
+
 </body>
 
 </html>

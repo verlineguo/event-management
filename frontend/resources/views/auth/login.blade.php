@@ -52,10 +52,7 @@
   </head>
 
   <body>
-    <!-- Content -->
-    @if($errors->any())
-    <div>{{ $errors->first() }}</div>
-@endif
+  
 
 
     <div class="container-xxl">
