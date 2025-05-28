@@ -7360,6 +7360,20 @@ h1, h2, h3, h4, h5,
       @media (max-width: 991.98px) {
         .ftco-navbar-light .navbar-nav > .nav-item.ftco-seperator:before {
           display: none; } }
+  .ftco-navbar-light .navbar-nav > .nav-item.su > a{
+    color: #6b76ff;
+    border: 1px solid #6b76ff;
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+    padding-left: 18px;
+    padding-right: 18px;
+    margin-top: 4px;
+    background: none;
+    -webkit-border-radius: 2px;
+    -moz-border-radius: 2px;
+    -ms-border-radius: 2px;
+    border-radius: 2px;      
+        }      
   .ftco-navbar-light .navbar-nav > .nav-item.cta > a {
     color: #fff;
     border: 1px solid #6b76ff;
@@ -7415,6 +7429,19 @@ h1, h2, h3, h4, h5,
     .ftco-navbar-light.scrolled .nav-item.cta > a {
       color: #fff !important;
       background: #6b76ff;
+      border: none !important;
+      padding-top: 0.5rem !important;
+      padding-bottom: .5rem !important;
+      padding-left: 20px !important;
+      padding-right: 20px !important;
+      margin-top: 6px !important;
+      -webkit-border-radius: 5px;
+      -moz-border-radius: 5px;
+      -ms-border-radius: 5px;
+      border-radius: 5px; }
+      .ftco-navbar-light.scrolled .nav-item.su > a {
+      color: #6b76ff !important;
+      background: none;
       border: none !important;
       padding-top: 0.5rem !important;
       padding-bottom: .5rem !important;
@@ -8898,3 +8925,7 @@ textarea.form-control {
   100% {
     stroke-dasharray: 89, 200;
     stroke-dashoffset: -136px; } }
+
+
+
+    

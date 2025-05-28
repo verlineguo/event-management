@@ -1,27 +1,476 @@
 @extends('guest.layouts.app')
 
+@section('styles')
+    <style>
+        .btn-primary-custom {
+    background: #6b76ff;
+    border: none;
+    padding: 15px 30px;
+    font-weight: 600;
+    border-radius: 50px;
+    box-shadow: 0 5px 10px rgba(107, 118, 255, 0.3);
+    transition: all 0.3s ease;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary-custom:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 7px 15px rgba(107, 118, 255, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-secondary-custom {
+    background: transparent;
+    border: 2px solid #6b76ff;
+    padding: 15px 30px;
+    font-weight: 600;
+    border-radius: 50px;
+    color: #6b76ff;
+    text-decoration: none;
+    display: inline-block;
+    margin-left: 15px;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary-custom:hover {
+    background: #6b76ff;
+    border: 2px solid #6b76ff;
+    color: white;
+    transform: translateY(-3px);
+    text-decoration: none;
+}
+
+.btn-register-custom {
+    background: transparent;
+    border: 2px solid white;
+    padding: 15px 30px;
+    font-weight: 600;
+    border-radius: 50px;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+    margin-left: 15px;
+    transition: all 0.3s ease;
+}
+
+.btn-register-custom:hover {
+    background: white;
+    border: 2px solid white;
+    color: #6b76ff;
+    text-decoration: none;
+    transform: translateY(-3px);
+}
+
+/* Events Section Styles - FIXED VERSION */
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+    margin-top: 50px;
+}
+
+.event-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    margin-bottom: 30px;
+    height: auto; /* Changed from 100% to auto */
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.event-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(107, 118, 255, 0.15);
+}
+
+.event-poster {
+    height: 250px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.event-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.event-card:hover .event-poster img {
+    transform: scale(1.05);
+}
+
+.event-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.event-card:hover .event-overlay {
+    opacity: 1;
+}
+
+.event-status {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 10;
+}
+
+.status-open {
+    background: rgba(40, 167, 69, 0.9);
+    color: white;
+}
+
+.status-closed {
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+}
+
+.status-ongoing {
+    background: rgba(255, 193, 7, 0.9);
+    color: #212529;
+}
+
+.status-completed {
+    background: rgba(108, 117, 125, 0.9);
+    color: white;
+}
+
+.status-cancelled {
+    background: rgba(253, 126, 20, 0.9);
+    color: white;
+}
+
+.event-date-badge {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    background: rgba(107, 118, 255, 0.95);
+    color: white;
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    min-width: 70px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 10;
+}
+
+.event-date-badge .day {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1;
+    display: block;
+}
+
+.event-date-badge .month {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-top: 2px;
+}
+
+.event-content {
+    padding: 25px;
+    position: relative;
+}
+
+.event-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: #2d3748;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.event-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.event-meta {
+    display: flex;
+    align-items: center;
+    color: #718096;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.event-meta i {
+    margin-right: 8px;
+    color: #6b76ff;
+    width: 14px;
+    font-size: 13px;
+}
+
+.event-meta-full {
+    grid-column: 1 / -1;
+}
+
+.event-speaker {
+    background: linear-gradient(135deg, #f7fafc, #edf2f7);
+    padding: 12px;
+    border-radius: 10px;
+    margin: 12px 0;
+    border-left: 3px solid #6b76ff;
+}
+
+.event-speaker .speaker-name {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.event-speaker .speaker-title {
+    font-size: 12px;
+    color: #718096;
+}
+
+.event-fee {
+    background: linear-gradient(135deg, #6b76ff, #8b5cf6);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-block;
+    margin: 12px 0;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(107, 118, 255, 0.3);
+    letter-spacing: 0.3px;
+}
+
+.event-fee.free {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.event-fee i {
+    margin-right: 6px;
+}
+
+.btn-register-event {
+    background: linear-gradient(135deg, #6b76ff, #8b5cf6);
+    color: white !important;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    text-decoration: none !important;
+    display: block;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.btn-register-event:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-register-event:hover:before {
+    left: 100%;
+}
+
+.btn-register-event:hover {
+    transform: translateY(-2px);
+    color: white !important;
+    text-decoration: none !important;
+    box-shadow: 0 8px 25px rgba(107, 118, 255, 0.4);
+}
+
+.btn-register-event:disabled {
+    background: linear-gradient(135deg, #a0aec0, #718096) !important;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.no-events {
+    text-align: center;
+    padding: 60px 20px;
+    color: #718096;
+    background: linear-gradient(135deg, #f7fafc, #edf2f7);
+    border-radius: 20px;
+    margin: 40px 0;
+}
+
+.no-events i {
+    font-size: 60px;
+    color: #cbd5e0;
+    margin-bottom: 25px;
+    background: linear-gradient(135deg, #6b76ff, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.no-events h3 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #2d3748;
+}
+
+.no-events p {
+    font-size: 16px;
+    color: #718096;
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.section-title .subheading {
+    color: #6b76ff;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 13px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.section-title h2 {
+    font-size: 42px;
+    font-weight: 800;
+    color: #2d3748;
+    margin-bottom: 18px;
+    line-height: 1.2;
+}
+
+.section-title h2 span {
+    background: linear-gradient(135deg, #6b76ff, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.section-title p {
+    font-size: 16px;
+    color: #718096;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .events-grid {
+        grid-template-columns: 1fr;
+        gap: 25px;
+        margin-top: 30px;
+    }
+
+    .event-content {
+        padding: 20px;
+    }
+
+    .event-meta-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .section-title h2 {
+        font-size: 32px;
+    }
+
+    .btn-primary-custom,
+    .btn-secondary-custom,
+    .btn-register-custom {
+        display: block;
+        margin: 10px 0;
+        text-align: center;
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .event-poster {
+        height: 200px;
+    }
+
+    .event-title {
+        font-size: 18px;
+    }
+
+    .section-title h2 {
+        font-size: 26px;
+    }
+
+    .events-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+      
+    </style>
+@endsection
+
 @section('content')
+    <!-- Hero Section -->
     <div class="hero-wrap js-fullheight" style="background-image: url('images/bg_1.jpg');" data-stellar-background-ratio="0.5">
         <div class="overlay"></div>
         <div class="container">
             <div class="row no-gutters slider-text js-fullheight align-items-center justify-content-start"
                 data-scrollax-parent="true">
                 <div class="col-xl-10 ftco-animate" data-scrollax=" properties: { translateY: '70%' }">
-                    <h1 class="mb-4" data-scrollax="properties: { translateY: '30%', opacity: 1.6 }"> Developer
-                        <br><span>Conference 2019</span></h1>
-                    <p class="mb-4" data-scrollax="properties: { translateY: '30%', opacity: 1.6 }">December 21-24, 2019.
-                        Paris, Italy</p>
-                    <div id="timer" class="d-flex mb-3">
-                        <div class="time" id="days"></div>
-                        <div class="time pl-4" id="hours"></div>
-                        <div class="time pl-4" id="minutes"></div>
-                        <div class="time pl-4" id="seconds"></div>
-                    </div>
+                    <h1 class="mb-4" data-scrollax="properties: { translateY: '30%', opacity: 1.6 }"> Discover Amazing
+                        <br><span>Events</span>
+                    </h1>
+                    <a href="#events" class="btn-primary-custom">
+                        <i class="fas fa-calendar-check me-2"></i>View Events
+                    </a>
+                    <a href="{{ route('register') }}" class="btn-secondary-custom">
+                        <i class="fas fa-user-plus me-2"></i>Register Now
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Services Section -->
     <section class="ftco-section services-section bg-light">
         <div class="container">
             <div class="row d-flex">
@@ -30,7 +479,7 @@
                         <div class="icon"><span class="flaticon-placeholder"></span></div>
                         <div class="media-body">
                             <h3 class="heading mb-3">Venue</h3>
-                            <p> 203 Fake St. Mountain View, San Francisco, California, USA</p>
+                            <p>203 Fake St. Mountain View, San Francisco, California, USA</p>
                         </div>
                     </div>
                 </div>
@@ -65,656 +514,114 @@
         </div>
     </section>
 
-    <section class="ftco-counter img" id="section-counter">
+    <!-- Events Section -->
+    <section id="events" class="ftco-section bg-light">
         <div class="container">
-            <div class="row d-flex">
-                <div class="col-md-6 d-flex">
-                    <div class="img d-flex align-self-stretch" style="background-image:url(images/about.jpg);"></div>
-                </div>
-                <div class="col-md-6 pl-md-5 py-5">
-                    <div class="row justify-content-start pb-3">
-                        <div class="col-md-12 heading-section ftco-animate">
-                            <span class="subheading">Fun Facts</span>
-                            <h2 class="mb-4"><span>Fun</span> Facts</h2>
-                            <p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia</p>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 justify-content-center counter-wrap ftco-animate">
-                            <div class="block-18 text-center py-4 bg-light mb-4">
-                                <div class="text">
-                                    <div class="icon d-flex justify-content-center align-items-center">
-                                        <span class="flaticon-guest"></span>
-                                    </div>
-                                    <strong class="number" data-number="30">0</strong>
-                                    <span>Speakers</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 justify-content-center counter-wrap ftco-animate">
-                            <div class="block-18 text-center py-4 bg-light mb-4">
-                                <div class="text">
-                                    <div class="icon d-flex justify-content-center align-items-center">
-                                        <span class="flaticon-handshake"></span>
-                                    </div>
-                                    <strong class="number" data-number="200">0</strong>
-                                    <span>Sponsor</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 justify-content-center counter-wrap ftco-animate">
-                            <div class="block-18 text-center py-4 bg-light mb-4">
-                                <div class="text">
-                                    <div class="icon d-flex justify-content-center align-items-center">
-                                        <span class="flaticon-chair"></span>
-                                    </div>
-                                    <strong class="number" data-number="2500">0</strong>
-                                    <span>Total Seats</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 justify-content-center counter-wrap ftco-animate">
-                            <div class="block-18 text-center py-4 bg-light mb-4">
-                                <div class="text">
-                                    <div class="icon d-flex justify-content-center align-items-center">
-                                        <span class="flaticon-idea"></span>
-                                    </div>
-                                    <strong class="number" data-number="40">0</strong>
-                                    <span>Topics</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="section-title ftco-animate">
+                <span class="subheading">Discover</span>
+                <h2><span>Upcoming</span> Events</h2>
+                <p>Join our exciting events and expand your knowledge with industry experts</p>
             </div>
+
+            @if (isset($events) && count($events) > 0)
+                <div class="events-grid">
+                    @foreach ($events as $event)
+                        <div class="event-card ftco-animate">
+                            <div class="event-poster">
+                                @if (isset($event['poster']) && $event['poster'])
+                                    <img src="{{ asset('storage/' . $event['poster']) }}"
+                                        alt="{{ $event['name'] ?? 'Event Poster' }}">
+                                @else
+                                    <img src="{{ asset('images/default-event.jpg') }}" alt="Default Event Poster">
+                                @endif
+                                <div class="event-overlay"></div>
+
+                                <div class="event-status status-{{ $event['status'] ?? 'open' }}">
+                                    {{ ucfirst($event['status'] ?? 'Open') }}
+                                </div>
+
+                                <div class="event-date-badge">
+                                    <div class="day">{{ date('d', strtotime($event['date'])) }}</div>
+                                    <div class="month">{{ date('M', strtotime($event['date'])) }}</div>
+                                </div>
+                            </div>
+
+                            <div class="event-content">
+                                <h3 class="event-title">{{ $event['name'] ?? 'Event Name' }}</h3>
+
+                                <div class="event-meta-grid">
+                                    <div class="event-meta">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <span>{{ date('M j, Y', strtotime($event['date'])) }}</span>
+                                    </div>
+
+                                    <div class="event-meta">
+                                        <i class="fas fa-clock"></i>
+                                        <span>{{ $event['time'] ?? 'TBA' }}</span>
+                                    </div>
+
+                                    <div class="event-meta event-meta-full">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <span>{{ $event['location'] ?? 'Location TBA' }}</span>
+                                    </div>
+
+                                    <div class="event-meta">
+                                        <i class="fas fa-users"></i>
+                                        <span>Max: {{ number_format($event['max_participants'] ?? 0) }}</span>
+                                    </div>
+
+                                </div>
+
+                                @if (isset($event['speaker']) && $event['speaker'])
+                                    <div class="event-speaker">
+                                        <div class="speaker-name">
+                                            <i class="fas fa-microphone"></i> {{ $event['speaker'] }}
+                                        </div>
+                                        @if (isset($event['speaker_title']))
+                                            <div class="speaker-title">{{ $event['speaker_title'] }}</div>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                <div class="event-fee {{ ($event['registration_fee'] ?? 0) == 0 ? 'free' : '' }}">
+                                    <i class="fas fa-tag"></i>
+                                    {{ ($event['registration_fee'] ?? 0) == 0 ? 'FREE EVENT' : 'Rp' . number_format($event['registration_fee']) }}
+                                </div>
+
+                                @if (($event['status'] ?? 'open') === 'open')
+                                    <a href="#" class="btn-register-event">
+                                        <i class="fas fa-ticket-alt"></i> Register Now
+                                    </a>
+                                @else
+                                    <button class="btn-register-event" disabled>
+                                        <i class="fas fa-times-circle"></i> {{ ucfirst($event['status'] ?? 'Closed') }}
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="no-events ftco-animate">
+                    <i class="fas fa-calendar-times"></i>
+                    <h3>No Events Available</h3>
+                    <p>Stay tuned! Amazing events are coming soon.</p>
+                </div>
+            @endif
         </div>
     </section>
 
-    <section class="ftco-section">
-        <div class="container">
-            <div class="row justify-content-center mb-5 pb-3">
-                <div class="col-md-7 text-center heading-section ftco-animate">
-                    <span class="subheading">Speaker</span>
-                    <h2 class="mb-4"><span>Our</span> Speakers</h2>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12 ftco-animate">
-                    <div class="carousel-testimony owl-carousel">
-                        <div class="item">
-                            <div class="speaker">
-                                <img src="images/speaker-1.jpg" class="img-fluid" alt="Colorlib HTML5 Template">
-                                <div class="text text-center py-3">
-                                    <h3>John Adams</h3>
-                                    <span class="position">Web Developer</span>
-                                    <ul class="ftco-social mt-3">
-                                        <li class="ftco-animate"><a href="#"><span class="icon-twitter"></span></a>
-                                        </li>
-                                        <li class="ftco-animate"><a href="#"><span
-                                                    class="icon-facebook"></span></a></li>
-                                        <li class="ftco-animate"><a href="#"><span
-                                                    class="icon-instagram"></span></a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="item">
-                            <div class="speaker">
-                                <img src="images/speaker-2.jpg" class="img-fluid" alt="Colorlib HTML5 Template">
-                                <div class="text text-center py-3">
-                                    <h3>Paul George</h3>
-                                    <span class="position">Web Developer</span>
-                                    <ul class="ftco-social mt-3">
-                                        <li class="ftco-animate"><a href="#"><span class="icon-twitter"></span></a>
-                                        </li>
-                                        <li class="ftco-animate"><a href="#"><span
-                                                    class="icon-facebook"></span></a></li>
-                                        <li class="ftco-animate"><a href="#"><span
-                                                    class="icon-instagram"></span></a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="item">
-                            <div class="speaker">
-                                <img src="images/speaker-3.jpg" class="img-fluid" alt="Colorlib HTML5 Template">
-                                <div class="text text-center py-3">
-                                    <h3>James Smith</h3>
-                                    <span class="position">Web Developer</span>
-                                    <ul class="ftco-social mt-3">
-                                        <li class="ftco-animate"><a href="#"><span class="icon-twitter"></span></a>
-                                        </li>
-                                        <li class="ftco-animate"><a href="#"><span
-                                                    class="icon-facebook"></span></a></li>
-                                        <li class="ftco-animate"><a href="#"><span
-                                                    class="icon-instagram"></span></a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="item">
-                            <div class="speaker">
-                                <img src="images/speaker-4.jpg" class="img-fluid" alt="Colorlib HTML5 Template">
-                                <div class="text text-center py-3">
-                                    <h3>Angelie Crawford</h3>
-                                    <span class="position">Web Developer</span>
-                                    <ul class="ftco-social mt-3">
-                                        <li class="ftco-animate"><a href="#"><span class="icon-twitter"></span></a>
-                                        </li>
-                                        <li class="ftco-animate"><a href="#"><span
-                                                    class="icon-facebook"></span></a></li>
-                                        <li class="ftco-animate"><a href="#"><span
-                                                    class="icon-instagram"></span></a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="item">
-                            <div class="speaker">
-                                <img src="images/speaker-5.jpg" class="img-fluid" alt="Colorlib HTML5 Template">
-                                <div class="text text-center py-3">
-                                    <h3>Jackie Spears</h3>
-                                    <span class="position">Entrepreneur</span>
-                                    <ul class="ftco-social mt-3">
-                                        <li class="ftco-animate"><a href="#"><span class="icon-twitter"></span></a>
-                                        </li>
-                                        <li class="ftco-animate"><a href="#"><span
-                                                    class="icon-facebook"></span></a></li>
-                                        <li class="ftco-animate"><a href="#"><span
-                                                    class="icon-instagram"></span></a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-    <section class="ftco-section bg-light">
-        <div class="container">
-            <div class="row justify-content-center mb-5 pb-3">
-                <div class="col-md-7 text-center heading-section ftco-animate">
-                    <span class="subheading">Schedule</span>
-                    <h2 class="mb-4"><span>Event</span> Schedule</h2>
-                </div>
-            </div>
-            <div class="ftco-search">
-                <div class="row">
-                    <div class="col-md-12 nav-link-wrap">
-                        <div class="nav nav-pills d-flex text-center" id="v-pills-tab" role="tablist"
-                            aria-orientation="vertical">
-                            <a class="nav-link ftco-animate active" id="v-pills-1-tab" data-toggle="pill"
-                                href="#v-pills-1" role="tab" aria-controls="v-pills-1" aria-selected="true">Day 01
-                                <span>21 Dec. 2019</span></a>
-
-                            <a class="nav-link ftco-animate" id="v-pills-2-tab" data-toggle="pill" href="#v-pills-2"
-                                role="tab" aria-controls="v-pills-2" aria-selected="false">Day 02 <span>22 Dec.
-                                    2019</span></a>
-
-                            <a class="nav-link ftco-animate" id="v-pills-3-tab" data-toggle="pill" href="#v-pills-3"
-                                role="tab" aria-controls="v-pills-3" aria-selected="false">Day 03 <span>23 Dec.
-                                    2019</span></a>
-
-                            <a class="nav-link ftco-animate" id="v-pills-4-tab" data-toggle="pill" href="#v-pills-4"
-                                role="tab" aria-controls="v-pills-4" aria-selected="false">Day 04 <span>24 Dec.
-                                    2019</span></a>
-
-                        </div>
-                    </div>
-                    <div class="col-md-12 tab-wrap">
-
-                        <div class="tab-content" id="v-pills-tabContent">
-
-                            <div class="tab-pane fade show active" id="v-pills-1" role="tabpanel"
-                                aria-labelledby="day-1-tab">
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_1.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Introduction to Wordpress 5.0</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_2.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Best Practices For Programming WordPress</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_3.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Web Performance For Third Party Scripts</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="tab-pane fade" id="v-pills-2" role="tabpanel"
-                                aria-labelledby="v-pills-day-2-tab">
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_1.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Introduction to Wordpress 5.0</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_2.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Best Practices For Programming WordPress</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_3.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Web Performance For Third Party Scripts</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="tab-pane fade" id="v-pills-3" role="tabpanel"
-                                aria-labelledby="v-pills-day-3-tab">
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_1.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Introduction to Wordpress 5.0</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_2.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Best Practices For Programming WordPress</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_3.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Web Performance For Third Party Scripts</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="tab-pane fade" id="v-pills-4" role="tabpanel"
-                                aria-labelledby="v-pills-day-4-tab">
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_1.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Introduction to Wordpress 5.0</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_2.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Best Practices For Programming WordPress</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                                <div class="speaker-wrap ftco-animate d-flex">
-                                    <div class="img speaker-img" style="background-image: url(images/person_3.jpg);">
-                                    </div>
-                                    <div class="text pl-md-5">
-                                        <span class="time">08: - 10:00</span>
-                                        <h2><a href="#">Web Performance For Third Party Scripts</a></h2>
-                                        <p>A small river named Duden flows by their place and supplies it with the necessary
-                                            regelialia. It is a paradisematic country, in which roasted parts of sentences
-                                            fly into your mouth.</p>
-                                        <h3 class="speaker-name">&mdash; <a href="#">Brett Morgan</a> <span
-                                                class="position">Founder of Wordpress</span></h3>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-    <section class="ftco-section testimony-section">
-        <div class="container">
-            <div class="row justify-content-center mb-5 pb-3">
-                <div class="col-md-7 text-center heading-section ftco-animate">
-                    <span class="subheading">Testimonial</span>
-                    <h2 class="mb-4"><span>Happy</span> Clients</h2>
-                </div>
-            </div>
-            <div class="row ftco-animate">
-                <div class="col-md-12">
-                    <div class="carousel-testimony owl-carousel ftco-owl">
-                        <div class="item">
-                            <div class="testimony-wrap text-center py-4 pb-5">
-                                <div class="user-img mb-4" style="background-image: url(images/person_1.jpg)">
-                                    <span class="quote d-flex align-items-center justify-content-center">
-                                        <i class="icon-quote-left"></i>
-                                    </span>
-                                </div>
-                                <div class="text">
-                                    <p class="mb-4">Far far away, behind the word mountains, far from the countries
-                                        Vokalia and Consonantia, there live the blind texts.</p>
-                                    <p class="name">Roger Scott</p>
-                                    <span class="position">Marketing Manager</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <div class="testimony-wrap text-center py-4 pb-5">
-                                <div class="user-img mb-4" style="background-image: url(images/person_2.jpg)">
-                                    <span class="quote d-flex align-items-center justify-content-center">
-                                        <i class="icon-quote-left"></i>
-                                    </span>
-                                </div>
-                                <div class="text">
-                                    <p class="mb-4">Far far away, behind the word mountains, far from the countries
-                                        Vokalia and Consonantia, there live the blind texts.</p>
-                                    <p class="name">Roger Scott</p>
-                                    <span class="position">Interface Designer</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <div class="testimony-wrap text-center py-4 pb-5">
-                                <div class="user-img mb-4" style="background-image: url(images/person_3.jpg)">
-                                    <span class="quote d-flex align-items-center justify-content-center">
-                                        <i class="icon-quote-left"></i>
-                                    </span>
-                                </div>
-                                <div class="text">
-                                    <p class="mb-4">Far far away, behind the word mountains, far from the countries
-                                        Vokalia and Consonantia, there live the blind texts.</p>
-                                    <p class="name">Roger Scott</p>
-                                    <span class="position">UI Designer</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <div class="testimony-wrap text-center py-4 pb-5">
-                                <div class="user-img mb-4" style="background-image: url(images/person_1.jpg)">
-                                    <span class="quote d-flex align-items-center justify-content-center">
-                                        <i class="icon-quote-left"></i>
-                                    </span>
-                                </div>
-                                <div class="text">
-                                    <p class="mb-4">Far far away, behind the word mountains, far from the countries
-                                        Vokalia and Consonantia, there live the blind texts.</p>
-                                    <p class="name">Roger Scott</p>
-                                    <span class="position">Web Developer</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <div class="testimony-wrap text-center py-4 pb-5">
-                                <div class="user-img mb-4" style="background-image: url(images/person_1.jpg)">
-                                    <span class="quote d-flex align-items-center justify-content-center">
-                                        <i class="icon-quote-left"></i>
-                                    </span>
-                                </div>
-                                <div class="text">
-                                    <p class="mb-4">Far far away, behind the word mountains, far from the countries
-                                        Vokalia and Consonantia, there live the blind texts.</p>
-                                    <p class="name">Roger Scott</p>
-                                    <span class="position">System Analyst</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="ftco-section bg-light">
-        <div class="container">
-            <div class="row justify-content-center mb-5 pb-3">
-                <div class="col-md-7 heading-section ftco-animate text-center">
-                    <span class="subheading">Pricing Tables</span>
-                    <h2 class="mb-1"><span>Our</span> Ticket Pricing</h2>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-4 ftco-animate">
-                    <div class="block-7">
-                        <div class="text-center">
-                            <h2 class="heading">Personal</h2>
-                            <span class="price"><sup>$</sup> <span class="number">85</span></span>
-                            <span class="excerpt d-block">per Month</span>
-
-                            <h3 class="heading-2 my-4">Enjoy All The Features</h3>
-
-                            <ul class="pricing-text mb-5">
-                                <li>Conference Seats</li>
-                                <li>Free Wifi</li>
-                                <li>Coffee Breaks</li>
-                                <li>Lunch</li>
-                                <li>Workshops</li>
-                                <li>One Speakers</li>
-                                <li>Papers</li>
-                            </ul>
-
-                            <a href="#" class="btn btn-primary d-block px-2 py-3">Buy Ticket</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 ftco-animate">
-                    <div class="block-7">
-                        <div class="text-center">
-                            <h2 class="heading">Small Team</h2>
-                            <span class="price"><sup>$</sup> <span class="number">200</span></span>
-                            <span class="excerpt d-block">per Month</span>
-
-                            <h3 class="heading-2 my-4">Enjoy All The Features</h3>
-
-                            <ul class="pricing-text mb-5">
-                                <li>Conference Seats</li>
-                                <li>Free Wifi</li>
-                                <li>Coffee Breaks</li>
-                                <li>Lunch</li>
-                                <li>Workshops</li>
-                                <li>One Speakers</li>
-                                <li>Papers</li>
-                            </ul>
-
-                            <a href="#" class="btn btn-primary d-block px-2 py-3">Buy Ticket</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 ftco-animate">
-                    <div class="block-7">
-                        <div class="text-center">
-                            <h2 class="heading">Family Pack</h2>
-                            <span class="price"><sup>$</sup> <span class="number">499</span></span>
-                            <span class="excerpt d-block">per Month</span>
-
-                            <h3 class="heading-2 my-4">Enjoy All The Features</h3>
-
-                            <ul class="pricing-text mb-5">
-                                <li>Conference Seats</li>
-                                <li>Free Wifi</li>
-                                <li>Coffee Breaks</li>
-                                <li>Lunch</li>
-                                <li>Workshops</li>
-                                <li>One Speakers</li>
-                                <li>Papers</li>
-                            </ul>
-
-                            <a href="#" class="btn btn-primary d-block px-2 py-3">Buy Ticket</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="ftco-section bg-light">
-        <div class="container">
-            <div class="row justify-content-center mb-5 pb-3">
-                <div class="col-md-7 heading-section text-center ftco-animate">
-                    <span class="subheading">Our Blog</span>
-                    <h2><span>Recent</span> Blog</h2>
-                </div>
-            </div>
-            <div class="row d-flex">
-                <div class="col-md-4 d-flex ftco-animate">
-                    <div class="blog-entry justify-content-end">
-                        <a href="blog-single.html" class="block-20" style="background-image: url('images/image_1.jpg');">
-                        </a>
-                        <div class="text p-4 float-right d-block">
-                            <div class="d-flex align-items-center pt-2 mb-4">
-                                <div class="one">
-                                    <span class="day">07</span>
-                                </div>
-                                <div class="two">
-                                    <span class="yr">2019</span>
-                                    <span class="mos">January</span>
-                                </div>
-                            </div>
-                            <h3 class="heading mt-2"><a href="#">Why Lead Generation is Key for Business Growth</a>
-                            </h3>
-                            <p>A small river named Duden flows by their place and supplies it with the necessary regelialia.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 d-flex ftco-animate">
-                    <div class="blog-entry justify-content-end">
-                        <a href="blog-single.html" class="block-20" style="background-image: url('images/image_2.jpg');">
-                        </a>
-                        <div class="text p-4 float-right d-block">
-                            <div class="d-flex align-items-center pt-2 mb-4">
-                                <div class="one">
-                                    <span class="day">07</span>
-                                </div>
-                                <div class="two">
-                                    <span class="yr">2019</span>
-                                    <span class="mos">January</span>
-                                </div>
-                            </div>
-                            <h3 class="heading mt-2"><a href="#">Why Lead Generation is Key for Business Growth</a>
-                            </h3>
-                            <p>A small river named Duden flows by their place and supplies it with the necessary regelialia.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 d-flex ftco-animate">
-                    <div class="blog-entry">
-                        <a href="blog-single.html" class="block-20" style="background-image: url('images/image_3.jpg');">
-                        </a>
-                        <div class="text p-4 float-right d-block">
-                            <div class="d-flex align-items-center pt-2 mb-4">
-                                <div class="one">
-                                    <span class="day">06</span>
-                                </div>
-                                <div class="two">
-                                    <span class="yr">2019</span>
-                                    <span class="mos">January</span>
-                                </div>
-                            </div>
-                            <h3 class="heading mt-2"><a href="#">Why Lead Generation is Key for Business Growth</a>
-                            </h3>
-                            <p>A small river named Duden flows by their place and supplies it with the necessary regelialia.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
+    <!-- Call to Action Section -->
     <section class="ftco-section-parallax">
         <div class="parallax-img d-flex align-items-center">
             <div class="container">
                 <div class="row d-flex justify-content-center">
                     <div class="col-md-7 text-center heading-section heading-section-white ftco-animate">
-                        <h2>Subcribe to our Newsletter</h2>
-                        <p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there
-                            live the blind texts. Separated they live in</p>
+                        <h2>Ready to Get Started?</h2>
+                        <p>Join thousands of students and professionals who are already part of our community.</p>
                         <div class="row d-flex justify-content-center mt-4 mb-4">
                             <div class="col-md-8">
-                                <form action="#" class="subscribe-form">
-                                    <div class="form-group d-flex">
-                                        <input type="text" class="form-control" placeholder="Enter email address">
-                                        <input type="submit" value="Subscribe" class="submit px-3">
-                                    </div>
-                                </form>
+                                <a href="{{ route('register') }}" class="btn-register-custom">Register as member</a>
                             </div>
                         </div>
                     </div>
@@ -723,6 +630,7 @@
         </div>
     </section>
 
+    <!-- Gallery Section -->
     <section class="ftco-gallery">
         <div class="container-wrap">
             <div class="row no-gutters">

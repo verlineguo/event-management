@@ -3,10 +3,22 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class GuestMainController extends Controller
 {
-    public function index() {
-        return view('guest.home');
+
+    private $apiUrl = 'http://localhost:5000/api';
+
+    public function index()
+    {
+        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/events');
+
+        if ($response->successful()) {
+            $events = $response->json();
+            return view('guest.home', compact('events'));
+        }
+
+        return back()->withErrors(['message' => 'Gagal mengambil data events']);
     }
 }
