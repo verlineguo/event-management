@@ -1,14 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const Role = require('../models/Role');
+const roleController = require('../controllers/roleController');
 
-router.get('/', async (req, res) => {
-  try {
-    const roles = await Role.find().select('_id name');
-    res.json(roles);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+// GET /roles
+router.get('/', roleController.getAllRoles);
 
 module.exports = router;

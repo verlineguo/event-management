@@ -67,6 +67,7 @@ class EventController extends Controller
                 'status' => $request->status,
             ];
 
+
             $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/events', $eventData);
             
             if ($response->successful()) {
