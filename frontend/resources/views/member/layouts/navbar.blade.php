@@ -9,12 +9,12 @@
         <div class="collapse navbar-collapse" id="ftco-nav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item active"><a href="index.html" class="nav-link">Home</a></li>
-                <li class="nav-item"><a href="about.html" class="nav-link">About</a></li>
-                <li class="nav-item"><a href="speakers.html" class="nav-link">Speakers</a></li>
-                <li class="nav-item"><a href="schedule.html" class="nav-link">Schedule</a></li>
-                <li class="nav-item"><a href="blog.html" class="nav-link">Blog</a></li>
-                <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
-                <li class="nav-item cta mr-md-2"><a href="#" class="nav-link">Buy ticket</a></li>
+                <li class="nav-item"><a href="about.html" class="nav-link">Events</a></li>
+                <li class="nav-item"><a href="about.html" class="nav-link">Payments</a></li>
+                <li class="nav-item"><a href="about.html" class="nav-link">Tickets</a></li>
+                <li class="nav-item mr-5"><a href="about.html" class="nav-link">Certificates</a></li>
+     
+                <li class="nav-item cta mr-md-2"><a href="{{ route('logout') }}" class="nav-link">Logout</a></li>
 
             </ul>
         </div>

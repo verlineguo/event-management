@@ -142,6 +142,7 @@
                 }],
                 "order": [[2, "desc"]], // Order by date descending
                 "responsive": true,
+                "scrollX": true,
             });
 
             // SweetAlert for delete confirmation
