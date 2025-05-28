@@ -85,6 +85,9 @@ Route::prefix('guest')->group(function () {
     Route::controller(GuestMainController::class)->group(function() {
         Route::get('/home', 'index')->name('guest.home');
     });
+    Route::controller(GuestMainController::class)->group(function() {
+        Route::get('/event', 'about')->name('guest.events');
+    });
 });
 
 
