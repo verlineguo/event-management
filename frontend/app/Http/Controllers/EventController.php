@@ -17,6 +17,7 @@ class EventController extends Controller
 
         if ($response->successful()) {
             $events = $response->json();
+            Log::info($events);
             return view('committee.event.index', compact('events'));
         }
 
@@ -25,21 +26,32 @@ class EventController extends Controller
 
     public function create()
     {
-        return view('committee.event.create');
+        // Get categories for dropdown
+        $categoriesResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/category');
+        $categories = $categoriesResponse->successful() ? $categoriesResponse->json() : [];
+        
+        return view('committee.event.create', compact('categories'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'date' => 'required|date|after_or_equal:today',
-            'time' => 'required',
-            'location' => 'required|string|max:255',
-            'speaker' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'category_id' => 'required|string',
             'poster' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'registration_fee' => 'required|numeric|min:0',
             'max_participants' => 'required|integer|min:1',
             'status' => 'required|in:open,closed,cancelled,completed',
+            'sessions' => 'nullable|array',
+            'sessions.*.title' => 'required_with:sessions|string|max:255',
+            'sessions.*.description' => 'nullable|string',
+            'sessions.*.date' => 'required_with:sessions|date',
+            'sessions.*.start_time' => 'required_with:sessions|string',
+            'sessions.*.end_time' => 'required_with:sessions|string',
+            'sessions.*.location' => 'required_with:sessions|string|max:255',
+            'sessions.*.speaker' => 'required_with:sessions|string|max:255',
+            'sessions.*.max_participants' => 'nullable|integer|min:1',
         ]);
 
         try {
@@ -56,16 +68,19 @@ class EventController extends Controller
 
             $eventData = [
                 'name' => $request->name,
-                'date' => $request->date,
-                'time' => $request->time,
-                'location' => $request->location,
-                'speaker' => $request->speaker,
+                'description' => $request->description,
+                'category_id' => $request->category_id,
                 'poster' => $posterPath, 
                 'registration_fee' => $request->registration_fee,
                 'max_participants' => $request->max_participants,
                 'created_by' => session('user_id'),
                 'status' => $request->status,
             ];
+
+            // Add sessions if provided
+            if ($request->has('sessions') && is_array($request->sessions)) {
+                $eventData['sessions'] = $request->sessions;
+            }
 
 
             $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/events', $eventData);
@@ -91,10 +106,13 @@ class EventController extends Controller
     public function edit($id)
     {
         $eventResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . "/events/{$id}");
+        $categoriesResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/category');
 
         if ($eventResponse->successful()) {
             $event = $eventResponse->json();
-            return view('committee.event.edit', compact('event'));
+            $categories = $categoriesResponse->successful() ? $categoriesResponse->json() : [];
+            
+            return view('committee.event.edit', compact('event', 'categories'));
         }
 
         return back()->withErrors(['message' => 'Gagal mengambil data event']);
@@ -116,14 +134,22 @@ class EventController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'date' => 'required|date',
-            'time' => 'required',
-            'location' => 'required|string|max:255',
-            'speaker' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'category_id' => 'required|string',
             'poster' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'registration_fee' => 'required|numeric|min:0',
             'max_participants' => 'required|integer|min:1',
             'status' => 'required|in:open,closed,cancelled,completed',
+            'sessions' => 'nullable|array',
+            'sessions.*.title' => 'required_with:sessions|string|max:255',
+            'sessions.*.description' => 'nullable|string',
+            'sessions.*.date' => 'required_with:sessions|date',
+            'sessions.*.start_time' => 'required_with:sessions|string',
+            'sessions.*.end_time' => 'required_with:sessions|string',
+            'sessions.*.location' => 'required_with:sessions|string|max:255',
+            'sessions.*.speaker' => 'required_with:sessions|string|max:255',
+            'sessions.*.max_participants' => 'nullable|integer|min:1',
+            'sessions.*.status' => 'nullable|in:scheduled,ongoing,completed,cancelled',
         ]);
 
         try {
@@ -150,15 +176,18 @@ class EventController extends Controller
 
             $eventData = [
                 'name' => $request->name,
-                'date' => $request->date,
-                'time' => $request->time,
-                'location' => $request->location,
-                'speaker' => $request->speaker,
-                'poster' => $posterPath, // Cuma path aja
+                'description' => $request->description,
+                'category_id' => $request->category_id,
+                'poster' => $posterPath,
                 'registration_fee' => $request->registration_fee,
                 'max_participants' => $request->max_participants,
                 'status' => $request->status,
             ];
+
+            // Add sessions if provided
+            if ($request->has('sessions') && is_array($request->sessions)) {
+                $eventData['sessions'] = $request->sessions;
+            }
 
             $response = Http::withToken(session('jwt_token'))->put($this->apiUrl . "/events/{$id}", $eventData);
 
@@ -208,5 +237,122 @@ class EventController extends Controller
             
             return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
+    }
+
+    // New methods to match backend functionality
+
+    public function getByCategory($categoryId)
+    {
+        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . "/events/category/{$categoryId}");
+
+        if ($response->successful()) {
+            $events = $response->json();
+            return view('committee.event.index', compact('events'));
+        }
+
+        return back()->withErrors(['message' => 'Gagal mengambil data events berdasarkan kategori']);
+    }
+
+    public function getByStatus($status)
+    {
+        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . "/events/status/{$status}");
+
+        if ($response->successful()) {
+            $events = $response->json();
+            return view('committee.event.index', compact('events'));
+        }
+
+        return back()->withErrors(['message' => 'Gagal mengambil data events berdasarkan status']);
+    }
+
+    public function getSessions($id)
+    {
+        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . "/events/{$id}/sessions");
+
+        if ($response->successful()) {
+            $sessions = $response->json();
+            return view('committee.event.sessions', compact('sessions', 'id'));
+        }
+
+        return back()->withErrors(['message' => 'Gagal mengambil data sessions']);
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:open,closed,cancelled,completed'
+        ]);
+
+        try {
+            $response = Http::withToken(session('jwt_token'))->patch($this->apiUrl . "/events/{$id}/status", [
+                'status' => $request->status
+            ]);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Status event berhasil diupdate'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupdate status event'
+            ], 400);
+            
+        } catch (\Exception $e) {
+            Log::error('Exception when updating event status: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getQRCode($id)
+    {
+        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . "/events/{$id}/qr-code");
+
+        if ($response->successful()) {
+            $qrData = $response->json();
+            return response()->json($qrData);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal mengambil QR Code'
+        ], 400);
+    }
+
+    public function search(Request $request)
+    {
+        $params = [];
+        
+        if ($request->filled('q')) {
+            $params['q'] = $request->q;
+        }
+        
+        if ($request->filled('category')) {
+            $params['category'] = $request->category;
+        }
+        
+        if ($request->filled('status')) {
+            $params['status'] = $request->status;
+        }
+
+        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/events/search', $params);
+
+        if ($response->successful()) {
+            $events = $response->json();
+            
+            if ($request->ajax()) {
+                return response()->json($events);
+            }
+            
+            return view('committee.event.index', compact('events'));
+        }
+
+        return back()->withErrors(['message' => 'Gagal melakukan pencarian events']);
     }
 }

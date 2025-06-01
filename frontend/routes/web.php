@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminMainController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommitteeMainController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FinanceMainController;
@@ -41,6 +42,17 @@ Route::prefix('admin')->middleware(['auth.jwt', 'role:admin'])->group(function (
         Route::delete('/user/{id}',  'destroy')->name('admin.user.destroy');
     });
 
+    Route::controller(CategoryController::class)->group( function() {
+        Route::get('/category',  'index')->name('admin.category.index');
+        Route::get('/category/create',  'create')->name('admin.category.create');
+        Route::post('/category',  'store')->name('admin.category.store');
+        Route::get('/category/{id}/edit',  'edit')->name('admin.category.edit');
+        Route::put('/category/{id}',  'update')->name('admin.category.update');
+        Route::delete('/category/{id}',  'destroy')->name('admin.category.destroy');
+        
+    });
+
+
 
 });
 
@@ -67,6 +79,8 @@ Route::prefix('committee')->middleware(['auth.jwt', 'role:committee'])->group(fu
         Route::put('/event/{id}',  'update')->name('committee.event.update');
         Route::get('event/show/{id}',  'show')->name('committee.event.show');
         Route::delete('/event/{id}',  'destroy')->name('committee.event.destroy');
+        Route::get('/event/search',  'search')->name('committee.event.search');
+
     });
 
 

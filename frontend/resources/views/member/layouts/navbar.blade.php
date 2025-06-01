@@ -14,7 +14,19 @@
                 <li class="nav-item"><a href="about.html" class="nav-link">Tickets</a></li>
                 <li class="nav-item mr-5"><a href="about.html" class="nav-link">Certificates</a></li>
      
-                <li class="nav-item cta mr-md-2"><a href="{{ route('logout') }}" class="nav-link">Logout</a></li>
+                
+                <li class="nav-item cta mr-md-2">
+                        <a href="#"
+                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                            class="nav-link">
+                            Logout
+                        </a>
+
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                            @csrf
+                        </form>
+
+                    </li>
 
             </ul>
         </div>

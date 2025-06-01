@@ -82,6 +82,13 @@
                 <div class="text-truncate" data-i18n="Email">Users</div>
             </a>
         </li>
+        <li class="menu-item">
+            <a href="{{ route('admin.category.index') }}"
+                target="_blank" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-user"></i>
+                <div class="text-truncate" data-i18n="Email">Categories</div>
+            </a>
+        </li>
        
         
     </ul>
