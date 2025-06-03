@@ -10,9 +10,8 @@
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item active"><a href="index.html" class="nav-link">Home</a></li>
                 <li class="nav-item"><a href="about.html" class="nav-link">Events</a></li>
-                <li class="nav-item"><a href="about.html" class="nav-link">Payments</a></li>
-                <li class="nav-item"><a href="about.html" class="nav-link">Tickets</a></li>
-                <li class="nav-item mr-5"><a href="about.html" class="nav-link">Certificates</a></li>
+                <li class="nav-item"><a href="about.html" class="nav-link">History</a></li>
+               
      
                 
                 <li class="nav-item cta mr-md-2">

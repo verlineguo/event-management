@@ -2,394 +2,8 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('guest/css/event.css') }}">
-    <style>
-        .registration-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            margin-top: 90px;
-        }
 
-        .progress-bar-container {
-            margin-bottom: 30px;
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
 
-        .progress-steps {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            flex: 1;
-        }
-
-        .step-number {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-bottom: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .step.active .step-number {
-            background: #6b76ff;
-            color: white;
-        }
-
-        .step.completed .step-number {
-            background: #28a745;
-            color: white;
-        }
-
-        .step.inactive .step-number {
-            background: #e9ecef;
-            color: #6c757d;
-        }
-
-        .step-title {
-            font-size: 12px;
-            text-align: center;
-            color: #6c757d;
-        }
-
-        .step.active .step-title {
-            color: #6b76ff;
-            font-weight: bold;
-        }
-
-        .step.completed .step-title {
-            color: #28a745;
-        }
-
-        .step-connector {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            width: 100%;
-            height: 2px;
-            background: #e9ecef;
-            z-index: -1;
-        }
-
-        .step.completed .step-connector {
-            background: #28a745;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: #e9ecef;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #6b76ff, #0056b3);
-            transition: width 0.3s ease;
-            border-radius: 3px;
-        }
-
-        .registration-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .event-summary {
-            background: white;
-            border: #6b76ff 2px solid;
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-        }
-
-        .event-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .event-meta {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .event-meta i {
-            margin-right: 10px;
-            width: 20px;
-        }
-
-        .session-selection {
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #333;
-            border-bottom: 2px solid #6b76ff;
-            padding-bottom: 10px;
-        }
-
-        .session-card {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .session-card:hover {
-            border-color: #6b76ff;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.1);
-        }
-
-        .session-card.selected {
-            border-color: #6b76ff;
-            background: rgba(0, 123, 255, 0.05);
-        }
-
-        .session-card.full {
-            border-color: #dc3545;
-            background: rgba(220, 53, 69, 0.05);
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        .session-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-        }
-
-        .session-checkbox {
-            margin-right: 15px;
-        }
-
-        .session-info h4 {
-            margin: 0 0 8px 0;
-            color: #333;
-            font-size: 18px;
-        }
-
-        .session-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .session-detail {
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .session-detail i {
-            margin-right: 8px;
-            width: 16px;
-        }
-
-        .capacity-info {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 10px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-
-        .capacity-bar {
-            flex: 1;
-            height: 6px;
-            background: #e9ecef;
-            border-radius: 3px;
-            margin: 0 15px;
-            overflow: hidden;
-        }
-
-        .capacity-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.3s ease;
-        }
-
-        .capacity-fill.low {
-            background: #28a745;
-        }
-
-        .capacity-fill.medium {
-            background: #ffc107;
-        }
-
-        .capacity-fill.high {
-            background: #fd7e14;
-        }
-
-        .capacity-fill.full {
-            background: #dc3545;
-        }
-
-        .select-all-container {
-            margin-bottom: 25px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border: 1px solid #dee2e6;
-        }
-
-        .select-all-checkbox {
-            display: flex;
-            align-items: center;
-            font-weight: bold;
-            color: #495057;
-        }
-
-        .registration-summary {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .summary-row:last-child {
-            border-bottom: none;
-            font-weight: bold;
-            font-size: 18px;
-            color: #6b76ff;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: space-between;
-            margin-top: 30px;
-        }
-
-        .btn-draft {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-draft:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
-        }
-
-        .btn-continue {
-            background: linear-gradient(135deg, #6b76ff, #0056b3);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            flex: 1;
-        }
-
-        .btn-continue:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
-        }
-
-        .btn-continue:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .alert-info {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
-        }
-
-        .alert-warning {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-        }
-
-        .draft-indicator {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-        }
-
-        .draft-indicator i {
-            margin-right: 10px;
-        }
-
-        @media (max-width: 768px) {
-            .registration-container {
-                padding: 10px;
-            }
-
-            .step-title {
-                font-size: 10px;
-            }
-
-            .session-details {
-                grid-template-columns: 1fr;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-        }
-    </style>
 @endsection
 
 @section('content')
@@ -457,6 +71,7 @@
                 </span>
             </div>
         </div>
+
 
         @if (session('draft_saved'))
             <div class="draft-indicator">
@@ -659,6 +274,10 @@
     <script>
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Registration form loaded');
+    
+    // Load existing draft from server-side data (no AJAX needed)
+    loadExistingDraft();
+    
     updateSelection();
 
     // Handle select all checkbox
@@ -693,6 +312,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Load existing draft from server-side data (no AJAX needed)
+function loadExistingDraft() {
+    // Get draft data from server-side (passed from Blade template)
+    const draftData = @json($draft ?? null);
+    
+    if (draftData && draftData.selected_sessions) {
+        console.log('Loading draft with sessions:', draftData.selected_sessions);
+        
+        // Check the checkboxes for selected sessions
+        draftData.selected_sessions.forEach(sessionId => {
+            const checkbox = document.querySelector(`input[value="${sessionId}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+                checkbox.closest('.session-card').classList.add('selected');
+            }
+        });
+        
+        updateSelection();
+        updateSelectAllState();
+    }
+}
 
 function toggleSession(element) {
     if (element.classList.contains('full')) {

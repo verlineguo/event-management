@@ -9,6 +9,7 @@ use App\Http\Controllers\FinanceMainController;
 use App\Http\Controllers\GuestMainController;
 use App\Http\Controllers\MemberMainController;
 use App\Http\Controllers\MemberRegistrationController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -60,6 +61,15 @@ Route::prefix('finance')
         Route::controller(FinanceMainController::class)->group(function () {
             Route::get('/dashboard', 'index')->name('finance.dashboard');
         });
+
+        Route::controller(PaymentController::class)->group(function () {
+            Route::get('/payment', 'index')->name('finance.payment.index');
+            Route::get('/payment/create', 'create')->name('finance.payment.create');
+            Route::post('/payment', 'store')->name('finance.payment.store');
+            Route::get('/payment/{id}/edit', 'edit')->name('finance.payment.edit');
+            Route::put('/payment/{id}', 'update')->name('finance.payment.update');
+            Route::delete('/payment/{id}', 'destroy')->name('finance.payment.destroy');
+        });
     });
 
 Route::prefix('committee')
@@ -86,29 +96,26 @@ Route::prefix('member')
     ->group(function () {
         Route::controller(MemberMainController::class)->group(function () {
             Route::get('/home', action: 'index')->name('member.home');
-            Route::get('/events',  'events')->name('member.events.index');
-            Route::get('/events/{id}',  'showEvent')->name('events.show');
-          
+            Route::get('/events', 'events')->name('member.events.index');
+            Route::get('/events/{id}', 'showEvent')->name('member.events.show');
         });
 
         Route::controller(MemberRegistrationController::class)->group(function () {
-            Route::get('/events/{id}/register',  'registerEvent')->name('member.events.register');
-            Route::post('/events/{id}/register',  'storeRegistration')->name('member.events.store-registration');
-            Route::get('{id}/payment',  'showPayment')->name('member.events.payment');
-            Route::post('{id}/payment',  'processPayment')->name('member.events.process-payment');
-            Route::get('{id}/success/{registration_id}',  'registrationSuccess')->name('member.event.registration-success');
-            
-            Route::get('/registrations',  'myRegistrations')->name('member.myRegistration.index');
-            Route::get('/registrations/{id}',  'showRegistration')->name('member.myRegistrations.show');        
-            Route::get('/registrations/{id}/qr-codes',  'showQRCodes')->name('member.myRegistrations.qr-codes');
-            Route::patch('/registrations/{id}/cancel',  'cancelRegistration')->name('member.myRegistrations.cancel');            
-            Route::get('/registrations/{id}/payment-proof',  'downloadPaymentProof')->name('member.myRegistrations.payment-proof');
-        Route::post('/registration-draft/{id}',  'saveDraftRegistration')->name('member.registration-draft.save');
-        Route::get('/registration-draft/{id}',  'getDraft')->name('member.registration-draft.get');    
-        Route::delete('/registration-draft/{id}',  'deleteDraft')->name('member.registration-draft.delete');
+            Route::get('/events/{id}/register', 'registerEvent')->name('member.events.register');
+            Route::post('/events/{id}/register', 'storeRegistration')->name('member.events.store-registration');
+            Route::get('{id}/payment', 'showPayment')->name('member.events.payment');
+            Route::post('{id}/payment', 'processPayment')->name('member.events.process-payment');
+            Route::get('{id}/success/{registration_id}', 'registrationSuccess')->name('member.event.registration-success');
 
+            Route::get('/registrations', 'myRegistrations')->name('member.myRegistrations.index');
+            Route::get('/registrations/{id}', 'showRegistration')->name('member.myRegistrations.show');
+            Route::get('/registrations/{id}/qr-codes', 'showQRCodes')->name('member.myRegistrations.qr-codes');
+            Route::patch('/registrations/{id}/cancel', 'cancelRegistration')->name('member.myRegistrations.cancel');
+            Route::get('/registrations/{id}/payment-proof', 'downloadPaymentProof')->name('member.myRegistrations.payment-proof');
+            Route::post('/registration-draft/{id}', 'saveDraftRegistration')->name('member.registration-draft.save');
+            Route::get('/registration-draft/{id}', 'getDraft')->name('member.registration-draft.get');
+            Route::delete('/registration-draft/{id}', 'deleteDraft')->name('member.registration-draft.delete');
         });
-        
     });
 
 //     Route::middleware(['auth:web', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -116,19 +123,19 @@ Route::prefix('member')
 //         // List all registrations
 //         Route::get('/', [AdminRegistrationController::class, 'index'])
 //             ->name('index');
-        
+
 //         // Show registration detail
 //         Route::get('{id}', [AdminRegistrationController::class, 'show'])
 //             ->name('show');
-        
+
 //         // Confirm payment
 //         Route::patch('{id}/confirm', [AdminRegistrationController::class, 'confirmPayment'])
 //             ->name('confirm');
-        
+
 //         // Reject payment
 //         Route::patch('{id}/reject', [AdminRegistrationController::class, 'rejectPayment'])
 //             ->name('reject');
-        
+
 //         // Scan QR Code
 //         Route::post('scan-qr', [AdminRegistrationController::class, 'scanQRCode'])
 //             ->name('scan-qr');

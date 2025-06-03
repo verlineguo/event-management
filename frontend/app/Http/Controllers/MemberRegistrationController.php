@@ -34,8 +34,20 @@ class MemberRegistrationController extends Controller
             $this->formatEventDisplay($event);
 
             // Get existing draft if any
+            $draft = null;
             $draftResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/draft/' . $id);
-            $draft = $draftResponse->successful() ? $draftResponse->json() : null;
+
+            if ($draftResponse->successful()) {
+                $draftData = $draftResponse->json();
+
+                // Format draft data untuk JavaScript
+                if ($draftData && isset($draftData['selected_sessions'])) {
+                    $draft = [
+                        'selected_sessions' => $draftData['selected_sessions'],
+                    ];
+                }
+            }
+
             return view('member.registration', compact('event', 'draft'));
         } catch (\Exception $e) {
             return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
@@ -61,7 +73,7 @@ class MemberRegistrationController extends Controller
             $event = $eventResponse->json();
             // Calculate payment amount
             $paymentAmount = $event['registration_fee'] ?? 0;
-            
+
             // Store registration data in session for payment step
             $registrationData = [
                 'event_id' => $id,
@@ -69,12 +81,11 @@ class MemberRegistrationController extends Controller
                 'payment_amount' => $paymentAmount,
             ];
 
-
             session(['registration_data' => $registrationData]);
             // Save as draft
             $this->saveDraftData($registrationData);
 
-            return redirect()->route('member.payment', $id);
+            return redirect()->route('member.events.payment', $id);
         } catch (\Exception $e) {
             return back()
                 ->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()])
@@ -95,7 +106,6 @@ class MemberRegistrationController extends Controller
                     ->withErrors(['message' => 'Data registrasi tidak ditemukan']);
             }
 
-
             // Get event details
             $eventResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/member/events/' . $id);
             if (!$eventResponse->successful()) {
@@ -106,7 +116,7 @@ class MemberRegistrationController extends Controller
             $event = $eventResponse->json();
             $this->formatEventDisplay($event);
 
-            return view('member.events.payment', compact('event'));
+            return view('member.payment', compact('event'));
         } catch (\Exception $e) {
             return redirect()
                 ->route('member.events.index')
@@ -141,6 +151,7 @@ class MemberRegistrationController extends Controller
             }
 
             // Submit registration to API
+
             $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/registrations', $registrationData);
 
             if ($response->successful()) {
@@ -175,7 +186,6 @@ class MemberRegistrationController extends Controller
         try {
             // Get registration details
             $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/' . $registrationId);
-
             if (!$response->successful()) {
                 return redirect()
                     ->route('member.events.show', $id)
@@ -196,7 +206,7 @@ class MemberRegistrationController extends Controller
             $event = $eventResponse->json();
             $this->formatEventDisplay($event);
 
-            return view('member.events.success', compact('registration', 'event'));
+            return view('member.detail', compact('registration', 'event'));
         } catch (\Exception $e) {
             return redirect()
                 ->route('member.events.index')
@@ -234,26 +244,31 @@ class MemberRegistrationController extends Controller
      * Show specific registration detail
      */
     public function showRegistration($id)
-    {
-        try {
-            $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/' . $id);
+{
+    try {
 
-            if ($response->successful()) {
-                $registration = $response->json();
-                
-                // Format registration data
-                if (isset($registration['event_id'])) {
+        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/' . $id);
+        
+
+        if ($response->successful()) {
+            $registration = $response->json();
+            
+
+            // Format registration data
+            if (isset($registration['event_id']) && is_array($registration['event_id']) && isset($registration['event_id']['date'])) {
                     $registration['event_id']['formatted_date'] = Carbon::parse($registration['event_id']['date'])->format('d M Y');
-                }
-
-                return view('member.registrations.show', compact('registration'));
+                
             }
-
-            return back()->withErrors(['message' => 'Registrasi tidak ditemukan']);
-        } catch (\Exception $e) {
-            return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+            
+            return view('member.registrations.show', compact('registration'));
         }
+        
+  
+        
+    } catch (\Exception $e) {
+        return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
     }
+}
 
     /**
      * Show QR codes for confirmed registration
@@ -305,15 +320,21 @@ class MemberRegistrationController extends Controller
                 ]);
             }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan draft',
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Gagal menyimpan draft',
+                ],
+                400,
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
@@ -324,7 +345,6 @@ class MemberRegistrationController extends Controller
     {
         try {
             $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/draft/' . $id);
-
             if ($response->successful()) {
                 return response()->json($response->json());
             }
@@ -350,15 +370,21 @@ class MemberRegistrationController extends Controller
                 ]);
             }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus draft',
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Gagal menghapus draft',
+                ],
+                400,
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
@@ -421,9 +447,7 @@ class MemberRegistrationController extends Controller
         if (isset($event['sessions']) && count($event['sessions']) > 0) {
             $firstDate = Carbon::parse($event['sessions'][0]['date']);
             $lastDate = Carbon::parse($event['sessions'][count($event['sessions']) - 1]['date']);
-            $event['date_range'] = $firstDate->eq($lastDate) 
-                ? $firstDate->translatedFormat('l, d F Y') 
-                : $firstDate->translatedFormat('d M Y') . ' - ' . $lastDate->translatedFormat('d M Y');
+            $event['date_range'] = $firstDate->eq($lastDate) ? $firstDate->translatedFormat('l, d F Y') : $firstDate->translatedFormat('d M Y') . ' - ' . $lastDate->translatedFormat('d M Y');
         } else {
             $event['date_range'] = '-';
         }
@@ -438,21 +462,18 @@ class MemberRegistrationController extends Controller
     }
 
     private function saveDraftData($registrationData)
-{
-    try {
-        $response = Http::withToken(session('jwt_token'))
-            ->post($this->apiUrl . '/registrations/draft', $registrationData);
+    {
+        try {
+            $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/registrations/draft', $registrationData);
 
-        // Tambahkan ini untuk lihat apakah berhasil
-        if ($response->successful()) {
-            logger('Draft berhasil disimpan');
-        } else {
-            logger('Draft gagal disimpan: ' . $response->status() . ' - ' . $response->body());
+            // Tambahkan ini untuk lihat apakah berhasil
+            if ($response->successful()) {
+                logger('Draft berhasil disimpan');
+            } else {
+                logger('Draft gagal disimpan: ' . $response->status() . ' - ' . $response->body());
+            }
+        } catch (\Exception $e) {
+            logger('Gagal kirim draft ke API: ' . $e->getMessage());
         }
-
-    } catch (\Exception $e) {
-        logger('Gagal kirim draft ke API: ' . $e->getMessage());
     }
-}
-
 }

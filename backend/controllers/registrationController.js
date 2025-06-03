@@ -26,11 +26,10 @@ exports.checkRegistration = async (req, res) => {
   }
 };
 
-// Create new registration
 exports.createRegistration = async (req, res) => {
   try {
     const { event_id, selected_sessions, payment_proof_url, payment_amount } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     // Check if already registered
     const existingRegistration = await Registration.findOne({
@@ -42,7 +41,6 @@ exports.createRegistration = async (req, res) => {
     if (existingRegistration) {
       return res.status(400).json({ message: 'Anda sudah terdaftar untuk event ini' });
     }
-
 
     const existingDraft = await Registration.findOne({
       event_id,
@@ -91,11 +89,10 @@ exports.createRegistration = async (req, res) => {
       }
     }
 
-
     let registration;
     if (existingDraft) {
       // Update draft menjadi registrasi
-      existingDraft.registration_status = payment_amount > 0 ? 'pending' : 'confirmed';
+      existingDraft.registration_status = payment_amount > 0 ? 'registered' : 'confirmed';
       existingDraft.payment_status = payment_amount > 0 ? 'pending' : 'completed';
       existingDraft.payment_proof_url = payment_proof_url;
       existingDraft.registered_at = new Date();
@@ -108,17 +105,17 @@ exports.createRegistration = async (req, res) => {
         event_id,
         user_id: userId,
         selected_sessions,
-        payment_amount: payment_amount || event.price || 0,
+        payment_amount: payment_amount || event.registration_fee || 0,
         payment_proof_url,
-        registration_status: payment_amount > 0 ? 'pending' : 'confirmed',
+        registration_status: payment_amount > 0 ? 'registered' : 'confirmed',
         payment_status: payment_amount > 0 ? 'pending' : 'completed',
         registered_at: new Date()
       });
     }
 
+    // Create/Update session registrations (masih tanpa QR code)
+    await SessionRegistration.deleteMany({ registration_id: registration._id });
     
-
-    // Create session registrations
     const sessionRegistrations = [];
     for (const sessionId of selected_sessions) {
       const sessionReg = new SessionRegistration({
@@ -126,17 +123,16 @@ exports.createRegistration = async (req, res) => {
         session_id: sessionId,
         user_id: userId,
         status: 'registered',
-        qr_code: null, // Will be generated after payment confirmation
+        qr_code: null, // ✅ BENAR: QR code belum di-generate
         qr_used: false
       });
       await sessionReg.save();
       sessionRegistrations.push(sessionReg);
     }
 
-    
     // Populate registration for response
     const populatedRegistration = await Registration.findById(registration._id)
-      .populate('event_id', 'name description price location date')
+      .populate('event_id', 'name description registration_fee location date')
       .populate('user_id', 'name email')
       .populate('selected_sessions', 'title date start_time end_time location');
 
@@ -185,14 +181,13 @@ exports.getMyRegistrations = async (req, res) => {
 exports.getRegistration = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const registration = await Registration.findOne({
       _id: id,
       user_id: userId
     })
-      .populate('event_id', 'name description price location date status')
-      .populate('selected_sessions', 'title date start_time end_time location')
+      .populate('event_id', 'name description registration_fee max_participants status')
       .populate('user_id', 'name email');
 
     if (!registration) {
@@ -201,7 +196,7 @@ exports.getRegistration = async (req, res) => {
 
     const sessionRegistrations = await SessionRegistration.find({
       registration_id: registration._id
-    }).populate('session_id', 'title date start_time end_time location');
+    }).populate('session_id', 'title description date start_time end_time location speaker status');
 
     res.json({
       ...registration.toObject(),
@@ -285,14 +280,10 @@ exports.saveDraft = async (req, res) => {
   try {
     const { event_id, selected_sessions, payment_amount } = req.body;
     const userId = req.user._id;
-
-    console.log('Saving draft for user:', userId, 'event:', event_id, 'sessions:', selected_sessions);
     
-    // Convert string IDs to ObjectId
     const eventObjectId = new mongoose.Types.ObjectId(event_id);
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    // Check if event exists
     const event = await Event.findById(eventObjectId);
     if (!event) {
       return res.status(404).json({ message: 'Event tidak ditemukan' });
@@ -324,71 +315,56 @@ exports.saveDraft = async (req, res) => {
       registration.payment_amount = payment_amount;
       registration.registration_status = 'draft';
       registration.payment_status = 'pending';
-      registration.updatedAt = new Date(); // Explicitly set updatedAt
+      registration.updatedAt = new Date(); 
       await registration.save();
-      console.log('Updated existing registration:', registration._id);
     } else {
-      // PERBAIKAN UTAMA: Sesuaikan dengan MongoDB validation
       const registrationData = {
         event_id: eventObjectId,
         user_id: userObjectId,
         registration_number: `REG-${event_id.slice(-6).toUpperCase()}-${Date.now()}`,
         payment_proof_url: null,
         payment_amount: payment_amount || 0,
-        payment_status: 'pending', // Sesuai dengan enum validation
+        payment_status: 'pending', 
         payment_verified_by: null,
         payment_verified_at: null,
         rejection_reason: null,
         registration_status: 'draft',
-        // TAMBAHAN PENTING: createdAt dan updatedAt harus ada untuk validation
-        createdAt: new Date(),
-        updatedAt: new Date()
       };
-
-      console.log('Creating registration with data:', registrationData);
       
       try {
         registration = new Registration(registrationData);
         await registration.save();
-        console.log('SUCCESS: Registration created with Mongoose');
       } catch (mongooseError) {
-        console.log('Mongoose creation failed:', mongooseError.message);
-        
-        // Fallback dengan direct collection insert
         try {
           const result = await Registration.collection.insertOne(registrationData);
           registration = await Registration.findById(result.insertedId);
-          console.log('SUCCESS: Direct insert worked');
         } catch (directError) {
-          console.log('Direct insert also failed:', directError.message);
           throw directError;
         }
       }
     }
 
-    // Handle session registrations - PERBAIKAN
+    // Delete existing session registrations for this draft
     await SessionRegistration.deleteMany({
       registration_id: registration._id
     });
 
-    // Create session registrations dengan data yang benar
+    // Create session registrations WITHOUT QR code (for draft)
     for (const sessionId of sessionObjectIds) {
       try {
         const sessionRegData = {
           registration_id: registration._id,
           session_id: sessionId,
           user_id: userObjectId,
-          qr_code: generateQRCode(), // Pastikan function ini ada
+          qr_code: null, // ✅ BENAR: Tidak generate QR code untuk draft
           status: 'registered',
           registered_at: new Date()
         };
         
         const sessionReg = new SessionRegistration(sessionRegData);
         await sessionReg.save();
-        console.log('Created session registration for session:', sessionId);
       } catch (sessionError) {
         console.error('Failed to create session registration:', sessionError.message);
-        // Lanjutkan ke session berikutnya, jangan stop
       }
     }
 
@@ -398,15 +374,6 @@ exports.saveDraft = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('=== FINAL ERROR ===');
-    console.error('Error type:', err.constructor.name);
-    console.error('Error message:', err.message);
-    console.error('Error code:', err.code);
-    
-    if (err.errInfo && err.errInfo.details) {
-      console.error('Full validation details:', JSON.stringify(err.errInfo.details, null, 2));
-    }
-    
     res.status(500).json({ 
       message: 'Gagal menyimpan draft registrasi',
       error: err.message 
@@ -415,49 +382,45 @@ exports.saveDraft = async (req, res) => {
 };
 
 
-
-// Helper function to generate QR code (you need to implement this)
-function generateQRCode() {
-  // Generate unique QR code string
-  return 'QR_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
-
-// Get registration draft
 exports.getDraft = async (req, res) => {
   try {
     const { id } = req.params; // event_id
-    const userId = req.user._id;
+    const userId = req.user._id; // Handle both cases
+
+    console.log('Getting draft for event:', id, 'user:', userId);
 
     const draft = await Registration.findOne({
       event_id: id,
       user_id: userId,
       registration_status: 'draft'
-    })
-      .populate('event_id', 'name registration_fee') // Changed from 'price' to 'registration_fee'
-      // Removed .populate('selected_sessions', 'title date start_time end_time')
-      // because selected_sessions doesn't exist in Registration schema
+    }).populate('event_id', 'name registration_fee');
 
     if (!draft) {
+      console.log('No draft found');
       return res.json(null);
     }
 
-    // Get session registrations separately
+    console.log('Draft found:', draft._id);
+
     const sessionRegistrations = await SessionRegistration.find({
       registration_id: draft._id
-    }).populate('session_id', 'title date start_time end_time');
+    }).populate('session_id', '_id title date start_time end_time');
 
-    // Add session registrations to the response
+    console.log('Session registrations found:', sessionRegistrations.length);
+
     const draftWithSessions = {
       ...draft.toObject(),
       session_registrations: sessionRegistrations,
-      selected_sessions: sessionRegistrations.map(sr => sr.session_id) // Reconstruct selected_sessions
+      selected_sessions: sessionRegistrations.map(sr => sr.session_id._id.toString()) // Convert to string array
     };
 
     res.json(draftWithSessions);
   } catch (err) {
+    console.error('Error getting draft:', err);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // Delete registration draft
 exports.deleteDraft = async (req, res) => {
@@ -540,11 +503,36 @@ exports.confirmPayment = async (req, res) => {
     registration.confirmation_notes = notes;
     await registration.save();
 
-    // Update session registrations
-    await SessionRegistration.updateMany(
-      { registration_id: registration._id },
-      { status: 'confirmed' }
-    );
+    // Update session registrations dan generate QR codes
+    const sessionRegistrations = await SessionRegistration.find({
+      registration_id: registration._id
+    });
+
+    for (const sessionReg of sessionRegistrations) {
+      // Generate QR code setelah konfirmasi pembayaran
+      const qrData = {
+        registration_id: registration._id,
+        session_id: sessionReg.session_id,
+        user_id: sessionReg.user_id,
+        event_id: registration.event_id,
+        timestamp: new Date().toISOString(),
+        uuid: uuidv4()
+      };
+
+      const qrString = JSON.stringify(qrData);
+      const qrCodeDataURL = await QRCode.toDataURL(qrString, {
+        errorCorrectionLevel: 'H',
+        type: 'image/png',
+        quality: 0.92,
+        margin: 1,
+        width: 256
+      });
+
+      // ✅ BENAR: QR code baru di-generate setelah konfirmasi pembayaran
+      sessionReg.status = 'confirmed';
+      sessionReg.qr_code = qrCodeDataURL;
+      await sessionReg.save();
+    }
 
     res.json({ 
       message: 'Pembayaran dan registrasi berhasil dikonfirmasi',

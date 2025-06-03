@@ -22,7 +22,7 @@ router.get('/draft/:id',authenticateToken, registrationController.getDraft);
 router.delete('/draft/:id',authenticateToken, registrationController.deleteDraft);
 
 // Cancel registration (before confirmation)
-router.patch('/:id/cancel', registrationController.cancelRegistration);
+router.patch('/:id/cancel', authenticateToken, registrationController.cancelRegistration);
 
 
 module.exports = router;
