@@ -15,3 +15,5 @@ const sessionRegistrationSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 sessionRegistrationSchema.index({ registration_id: 1, session_id: 1 }, { unique: true });
+
+module.exports = mongoose.model('SessionRegistration', sessionRegistrationSchema);

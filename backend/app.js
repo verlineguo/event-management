@@ -11,6 +11,8 @@ const usersRouter = require('./routes/Users');
 const RolesRouter = require('./routes/Roles');
 const EventsRouter = require('./routes/Events');
 const CategoryRouter = require('./routes/category');
+const memberEventRoutes = require('./routes/Member');
+const registrationRoutes = require('./routes/Registration');
 // CORS
 app.use(cors({
   origin: 'http://localhost:8000',
@@ -34,6 +36,9 @@ app.use('/api/users', usersRouter);
 app.use('/api/roles', RolesRouter);
 app.use('/api/events', EventsRouter);
 app.use('/api/category', CategoryRouter);
+app.use('/api/member/events', memberEventRoutes);
+app.use('/api/registrations', registrationRoutes);
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
