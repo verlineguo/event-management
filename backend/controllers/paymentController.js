@@ -1,50 +1,34 @@
 const Registration = require('../models/Registration');
-const Event = require('../models/Events');
-const User = require('../models/Users');
+const User = require('../models/User');
+const Event = require('../models/Event');
 
-// Get all registrations with pagination and filters
-exports.getAllRegistrations = async (req, res) => {
+// Get all registrations for finance approval
+exports.getAllPayments = async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      payment_status, 
-      event_id, 
-      registration_status 
-    } = req.query;
-
-    const filter = {};
-    if (payment_status) filter.payment_status = payment_status;
+    const { status, event_id } = req.query;
+    
+    let filter = {};
+    if (status) filter.payment_status = status;
     if (event_id) filter.event_id = event_id;
-    if (registration_status) filter.registration_status = registration_status;
 
     const registrations = await Registration.find(filter)
-      .populate('event_id', 'name registration_fee')
       .populate('user_id', 'name email phone')
+      .populate('event_id', 'name registration_fee')
       .populate('payment_verified_by', 'name')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .sort({ createdAt: -1 });
 
-    const total = await Registration.countDocuments(filter);
-
-    res.json({
-      registrations,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total
-    });
+    res.json(registrations);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
 // Get registration by ID
-exports.getRegistrationById = async (req, res) => {
+exports.getPaymentById = async (req, res) => {
   try {
     const registration = await Registration.findById(req.params.id)
-      .populate('event_id', 'name registration_fee description')
       .populate('user_id', 'name email phone')
+      .populate('event_id', 'name registration_fee')
       .populate('payment_verified_by', 'name');
       
     if (!registration) {
@@ -57,12 +41,12 @@ exports.getRegistrationById = async (req, res) => {
   }
 };
 
-// Update payment status (for finance role)
+// Update payment status (for finance)
 exports.updatePaymentStatus = async (req, res) => {
   try {
     const { payment_status, rejection_reason } = req.body;
-    const verifiedBy = req.user.id; // Assuming user info is in req.user from auth middleware
-
+    const financeUserId = req.user._id; // Dari JWT token
+    
     const registration = await Registration.findById(req.params.id);
     if (!registration) {
       return res.status(404).json({ message: 'Registration not found' });
@@ -80,7 +64,7 @@ exports.updatePaymentStatus = async (req, res) => {
 
     // Update registration
     registration.payment_status = payment_status;
-    registration.payment_verified_by = verifiedBy;
+    registration.payment_verified_by = financeUserId;
     registration.payment_verified_at = new Date();
     
     if (payment_status === 'rejected') {
@@ -88,15 +72,17 @@ exports.updatePaymentStatus = async (req, res) => {
       registration.registration_status = 'cancelled';
     } else if (payment_status === 'approved') {
       registration.registration_status = 'confirmed';
-      registration.rejection_reason = undefined; // Clear rejection reason if previously rejected
+      registration.rejection_reason = null; // Clear any previous rejection reason
     }
 
     const updatedRegistration = await registration.save();
     
-    // Populate the response
-    await updatedRegistration.populate('event_id', 'name registration_fee');
-    await updatedRegistration.populate('user_id', 'name email phone');
-    await updatedRegistration.populate('payment_verified_by', 'name');
+    // Populate untuk response
+    await updatedRegistration.populate([
+      { path: 'user_id', select: 'name email phone' },
+      { path: 'event_id', select: 'name registration_fee' },
+      { path: 'payment_verified_by', select: 'name' }
+    ]);
 
     res.json({
       message: `Payment ${payment_status} successfully`,
@@ -107,57 +93,45 @@ exports.updatePaymentStatus = async (req, res) => {
   }
 };
 
-// Get registrations pending for payment verification
-exports.getPendingPayments = async (req, res) => {
+// Get pending payments count (for dashboard)
+exports.getPendingPaymentsCount = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-
-    const registrations = await Registration.find({ 
-      payment_status: 'pending',
-      payment_proof_url: { $exists: true, $ne: null }
-    })
-      .populate('event_id', 'name registration_fee')
-      .populate('user_id', 'name email phone')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-
-    const total = await Registration.countDocuments({ 
-      payment_status: 'pending',
-      payment_proof_url: { $exists: true, $ne: null }
-    });
-
-    res.json({
-      registrations,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total
-    });
+    const count = await Registration.countDocuments({ payment_status: 'pending' });
+    res.json({ count });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Get payment statistics
-exports.getPaymentStatistics = async (req, res) => {
+// Bulk approve payments
+exports.bulkApprovePayments = async (req, res) => {
   try {
-    const stats = await Registration.aggregate([
-      {
-        $group: {
-          _id: '$payment_status',
-          count: { $sum: 1 },
-          totalAmount: { $sum: '$payment_amount' }
-        }
-      }
-    ]);
+    const { registration_ids } = req.body;
+    const financeUserId = req.user.id;
 
-    const totalRegistrations = await Registration.countDocuments();
-    
+    if (!Array.isArray(registration_ids) || registration_ids.length === 0) {
+      return res.status(400).json({ message: 'Registration IDs array is required' });
+    }
+
+    const result = await Registration.updateMany(
+      { 
+        _id: { $in: registration_ids },
+        payment_status: 'pending'
+      },
+      {
+        payment_status: 'approved',
+        registration_status: 'confirmed',
+        payment_verified_by: financeUserId,
+        payment_verified_at: new Date(),
+        $unset: { rejection_reason: 1 }
+      }
+    );
+
     res.json({
-      statistics: stats,
-      totalRegistrations
+      message: `${result.modifiedCount} payments approved successfully`,
+      modified_count: result.modifiedCount
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(400).json({ message: err.message });
   }
 };

@@ -13,87 +13,51 @@ class PaymentController extends Controller
     {
         $params = [];
         
-        // Add filters if provided
-        if ($request->has('payment_status') && $request->payment_status != '') {
-            $params['payment_status'] = $request->payment_status;
+        // Filter by status
+        if ($request->has('status') && $request->status != '') {
+            $params['status'] = $request->status;
         }
+        
+        // Filter by event
         if ($request->has('event_id') && $request->event_id != '') {
             $params['event_id'] = $request->event_id;
         }
-        if ($request->has('page')) {
-            $params['page'] = $request->page;
-        }
 
         $response = Http::withToken(session('jwt_token'))
-            ->get($this->apiUrl . '/registrations', $params);
+            ->get($this->apiUrl . '/payments', $params);
 
         if ($response->successful()) {
-            $data = $response->json();
+            $registrations = $response->json();
             
             // Get events for filter dropdown
             $eventsResponse = Http::withToken(session('jwt_token'))
                 ->get($this->apiUrl . '/events');
             $events = $eventsResponse->successful() ? $eventsResponse->json() : [];
-
-            return view('admin.registrations.index', [
-                'registrations' => $data['registrations'],
-                'pagination' => [
-                    'current_page' => $data['currentPage'],
-                    'total_pages' => $data['totalPages'],
-                    'total' => $data['total']
-                ],
-                'events' => $events,
-                'filters' => $request->only(['payment_status', 'event_id'])
-            ]);
-        }
-
-        return back()->withErrors(['message' => 'Gagal mengambil data registrasi']);
-    }
-
-    public function pendingPayments(Request $request)
-    {
-        $params = [];
-        if ($request->has('page')) {
-            $params['page'] = $request->page;
-        }
-
-        $response = Http::withToken(session('jwt_token'))
-            ->get($this->apiUrl . '/registrations/pending-payments', $params);
-
-        if ($response->successful()) {
-            $data = $response->json();
             
-            return view('admin.registrations.pending', [
-                'registrations' => $data['registrations'],
-                'pagination' => [
-                    'current_page' => $data['currentPage'],
-                    'total_pages' => $data['totalPages'],
-                    'total' => $data['total']
-                ]
-            ]);
+            return view('finance.payment.index', compact('registrations', 'events'));
         }
 
-        return back()->withErrors(['message' => 'Gagal mengambil data pembayaran pending']);
+        return back()->withErrors(['message' => 'Gagal mengambil data pembayaran']);
     }
 
     public function show($id)
     {
         $response = Http::withToken(session('jwt_token'))
-            ->get($this->apiUrl . "/registrations/{$id}");
+            ->get($this->apiUrl . "/payments/{$id}");
 
         if ($response->successful()) {
             $registration = $response->json();
-            return view('admin.registrations.show', compact('registration'));
+            return view('finance.payment.show', compact('registration'));
         }
 
-        return back()->withErrors(['message' => 'Gagal mengambil detail registrasi']);
+        return back()->withErrors(['message' => 'Gagal mengambil detail pembayaran']);
     }
 
-    public function updatePaymentStatus(Request $request, $id)
+    public function updateStatus(Request $request, $id)
     {
         $request->validate([
             'payment_status' => 'required|in:pending,approved,rejected',
-            'rejection_reason' => 'required_if:payment_status,rejected|string|max:500'
+            'rejection_reason' => 'required_if:payment_status,rejected|string|max:500',
         ]);
 
         try {
@@ -106,16 +70,17 @@ class PaymentController extends Controller
             }
 
             $response = Http::withToken(session('jwt_token'))
-                ->put($this->apiUrl . "/registrations/{$id}/payment-status", $paymentData);
+                ->put($this->apiUrl . "/payments/{$id}/payment-status", $paymentData);
 
             if ($response->successful()) {
-                $message = $request->payment_status === 'approved' 
-                    ? 'Pembayaran berhasil disetujui' 
-                    : 'Pembayaran berhasil ditolak';
-                    
-                return redirect()
-                    ->route('admin.registrations.index')
-                    ->with('success', $message);
+                $statusText = [
+                    'approved' => 'disetujui',
+                    'rejected' => 'ditolak',
+                    'pending' => 'dikembalikan ke pending'
+                ];
+
+                return redirect()->route('finance.payment.index')
+                    ->with('success', "Pembayaran berhasil {$statusText[$request->payment_status]}");
             }
 
             $error = $response->json('message') ?? 'Gagal mengupdate status pembayaran';
@@ -130,16 +95,56 @@ class PaymentController extends Controller
         }
     }
 
-    public function statistics()
+    public function bulkApprove(Request $request)
     {
-        $response = Http::withToken(session('jwt_token'))
-            ->get($this->apiUrl . '/registrations/statistics');
+        $request->validate([
+            'registration_ids' => 'required|array|min:1',
+            'registration_ids.*' => 'string',
+        ]);
 
-        if ($response->successful()) {
-            $statistics = $response->json();
-            return view('admin.registrations.statistics', compact('statistics'));
+        try {
+            $response = Http::withToken(session('jwt_token'))
+                ->post($this->apiUrl . '/payments/bulk-approve', [
+                    'registration_ids' => $request->registration_ids
+                ]);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                return redirect()->route('finance.payment.index')
+                    ->with('success', $result['message']);
+            }
+
+            $error = $response->json('message') ?? 'Gagal melakukan bulk approve';
+            return back()->withErrors(['message' => $error]);
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
+    }
 
-        return back()->withErrors(['message' => 'Gagal mengambil statistik pembayaran']);
+    public function dashboard()
+    {
+        try {
+            // Get pending payments count
+            $pendingResponse = Http::withToken(session('jwt_token'))
+                ->get($this->apiUrl . '/payments/pending-count');
+            
+            $pendingCount = $pendingResponse->successful() 
+                ? $pendingResponse->json()['count'] 
+                : 0;
+
+            // Get recent payments
+            $recentResponse = Http::withToken(session('jwt_token'))
+                ->get($this->apiUrl . '/payments', ['limit' => 5]);
+            
+            $recentPayments = $recentResponse->successful() 
+                ? $recentResponse->json() 
+                : [];
+
+            return view('finance.payment.dashboard', compact('pendingCount', 'recentPayments'));
+
+        } catch (\Exception $e) {
+
+        }
     }
 }

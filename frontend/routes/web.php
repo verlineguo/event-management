@@ -64,11 +64,9 @@ Route::prefix('finance')
 
         Route::controller(PaymentController::class)->group(function () {
             Route::get('/payment', 'index')->name('finance.payment.index');
-            Route::get('/payment/create', 'create')->name('finance.payment.create');
-            Route::post('/payment', 'store')->name('finance.payment.store');
-            Route::get('/payment/{id}/edit', 'edit')->name('finance.payment.edit');
-            Route::put('/payment/{id}', 'update')->name('finance.payment.update');
-            Route::delete('/payment/{id}', 'destroy')->name('finance.payment.destroy');
+            Route::get('/payment/{id}', 'show')->name('finance.payment.show');
+            Route::put('/payment/{id}/status', 'updateStatus')->name('finance.payment.update-status');
+            Route::post('/payment/bulk-approve', 'bulkApprove')->name('finance.payment.bulk-approve');
         });
     });
 

@@ -5,7 +5,6 @@ const cors = require('cors');
 
 const app = express();
 
-const guestRoutes = require('./routes/Guest');
 const authRoutes = require('./routes/auth');
 const usersRouter = require('./routes/Users');
 const RolesRouter = require('./routes/Roles');
@@ -13,6 +12,7 @@ const EventsRouter = require('./routes/Events');
 const CategoryRouter = require('./routes/category');
 const memberEventRoutes = require('./routes/Member');
 const registrationRoutes = require('./routes/Registration');
+const paymentRoutes = require('./routes/Payment');
 // CORS
 app.use(cors({
   origin: 'http://localhost:8000',
@@ -38,7 +38,7 @@ app.use('/api/events', EventsRouter);
 app.use('/api/category', CategoryRouter);
 app.use('/api/member/events', memberEventRoutes);
 app.use('/api/registrations', registrationRoutes);
-
+app.use('/api/payments', paymentRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
