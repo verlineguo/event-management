@@ -1,18 +1,48 @@
 const Event = require('../models/Event');
 const Session = require('../models/Session');
-const { v4: uuidv4 } = require('uuid');
-const QRCode = require('qrcode');
+
 
 // Get all events with sessions
 exports.getAllEvents = async (req, res) => {
   try {
-    // First get all events
-    const events = await Event.find()
+    const { q, category, status } = req.query;
+    let query = {};
+
+    // Jika ada query search, gunakan logika search
+    if (q || category || status) {
+      // Build search query
+      if (q && q.trim() !== '') {
+        query.$or = [
+          { name: { $regex: q.trim(), $options: 'i' } },
+          { description: { $regex: q.trim(), $options: 'i' } }
+        ];
+      }
+
+      // Filter by category
+      if (category && category.trim() !== '') {
+        const mongoose = require('mongoose');
+        if (mongoose.Types.ObjectId.isValid(category)) {
+          query.category_id = new mongoose.Types.ObjectId(category);
+        }
+      }
+
+      // Filter by status
+      if (status && status.trim() !== '') {
+        const validStatuses = ['open', 'closed', 'cancelled', 'completed'];
+        if (validStatuses.includes(status)) {
+          query.status = status;
+        }
+      }
+    }
+
+    console.log('Query:', JSON.stringify(query, null, 2));
+
+    const events = await Event.find(query)
       .populate('created_by', 'name email')
       .populate('category_id', 'name description color')
       .sort({ createdAt: -1 });
     
-    // Then get sessions for each event
+    // Add sessions to each event
     const eventsWithSessions = await Promise.all(
       events.map(async (event) => {
         const sessions = await Session.find({ event_id: event._id })
@@ -27,11 +57,11 @@ exports.getAllEvents = async (req, res) => {
     
     res.json(eventsWithSessions);
   } catch (err) {
+    console.error('Error:', err);
     res.status(500).json({ message: err.message });
   }
 };
 
-// Alternative: Get all sessions with event details (recommended approach)
 exports.getAllSessionsWithEvents = async (req, res) => {
   try {
     const sessions = await Session.find()
@@ -72,41 +102,21 @@ exports.getEventById = async (req, res) => {
   }
 };
 
-// Get sessions by event ID
-exports.getEventSessions = async (req, res) => {
-  try {
-    const sessions = await Session.find({ event_id: req.params.id })
-      .populate('event_id', 'name status')
-      .sort({ session_order: 1, date: 1 });
-    
-    if (sessions.length === 0) {
-      return res.status(404).json({ message: 'No sessions found for this event' });
-    }
-    
-    res.json(sessions);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+
 
 // Create event with sessions
 exports.createEvent = async (req, res) => {
   try {
-    // Generate unique QR code
-    const qrCodeData = `EVENT_${uuidv4()}`;
-    const qrCodeUrl = await QRCode.toDataURL(qrCodeData);
-    
+   
     // Create event first
     const event = new Event({
       name: req.body.name,
       description: req.body.description,
       category_id: req.body.category_id,
       poster: req.body.poster,
-      registration_fee: req.body.registration_fee || 0,
       max_participants: req.body.max_participants,
       created_by: req.body.created_by,
       status: req.body.status || 'open',
-      qr_code: qrCodeData
     });
 
     const savedEvent = await event.save();
@@ -126,7 +136,8 @@ exports.createEvent = async (req, res) => {
           speaker: sessionData.speaker,
           max_participants: sessionData.max_participants || savedEvent.max_participants,
           session_order: index + 1,
-          status: 'scheduled'
+          status: 'scheduled',
+          session_fee: sessionData.session_fee || 0,
         });
         return session.save();
       });
@@ -142,57 +153,12 @@ exports.createEvent = async (req, res) => {
     res.status(201).json({
       ...eventWithDetails.toObject(),
       sessions: savedSessions,
-      qr_code_url: qrCodeUrl
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
 
-// Search events with sessions
-exports.searchEvents = async (req, res) => {
-  try {
-    const { q, category, status } = req.query;
-    let query = {};
-
-    if (q) {
-      query.$or = [
-        { name: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } }
-      ];
-    }
-
-    if (category) {
-      query.category_id = category;
-    }
-
-    if (status) {
-      query.status = status;
-    }
-
-    const events = await Event.find(query)
-      .populate('created_by', 'name email')
-      .populate('category_id', 'name description color')
-      .sort({ createdAt: -1 });
-
-    // Add sessions to each event
-    const eventsWithSessions = await Promise.all(
-      events.map(async (event) => {
-        const sessions = await Session.find({ event_id: event._id })
-          .sort({ session_order: 1, date: 1 });
-        
-        return {
-          ...event.toObject(),
-          sessions: sessions
-        };
-      })
-    );
-
-    res.json(eventsWithSessions);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
 
 // Update event and sessions
 exports.updateEvent = async (req, res) => {
@@ -205,7 +171,6 @@ exports.updateEvent = async (req, res) => {
     if (req.body.description !== undefined) event.description = req.body.description;
     if (req.body.category_id) event.category_id = req.body.category_id;
     if (req.body.poster) event.poster = req.body.poster;
-    if (req.body.registration_fee !== undefined) event.registration_fee = req.body.registration_fee;
     if (req.body.max_participants !== undefined) event.max_participants = req.body.max_participants;
     if (req.body.status) event.status = req.body.status;
 
@@ -228,6 +193,7 @@ exports.updateEvent = async (req, res) => {
             end_time: sessionData.end_time,
             location: sessionData.location,
             speaker: sessionData.speaker,
+            session_fee: sessionData.session_fee || 0,
             max_participants: sessionData.max_participants || updatedEvent.max_participants,
             session_order: index + 1,
             status: sessionData.status || 'scheduled'
@@ -294,66 +260,6 @@ exports.deleteEvent = async (req, res) => {
   }
 };
 
-// Get events by category with sessions
-exports.getEventsByCategory = async (req, res) => {
-  try {
-    const events = await Event.find({ category_id: req.params.categoryId })
-      .populate('created_by', 'name email')
-      .populate('category_id', 'name description color')
-      .sort({ createdAt: -1 });
-    
-    // Add sessions to each event
-    const eventsWithSessions = await Promise.all(
-      events.map(async (event) => {
-        const sessions = await Session.find({ event_id: event._id })
-          .sort({ session_order: 1, date: 1 });
-        
-        return {
-          ...event.toObject(),
-          sessions: sessions
-        };
-      })
-    );
-    
-    res.json(eventsWithSessions);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// Get events by status with sessions
-exports.getEventsByStatus = async (req, res) => {
-  try {
-    const { status } = req.params;
-    const validStatuses = ['open', 'closed', 'cancelled', 'completed'];
-    
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
-    }
-
-    const events = await Event.find({ status })
-      .populate('created_by', 'name email')
-      .populate('category_id', 'name description color')
-      .sort({ createdAt: -1 });
-    
-    // Add sessions to each event
-    const eventsWithSessions = await Promise.all(
-      events.map(async (event) => {
-        const sessions = await Session.find({ event_id: event._id })
-          .sort({ session_order: 1, date: 1 });
-        
-        return {
-          ...event.toObject(),
-          sessions: sessions
-        };
-      })
-    );
-    
-    res.json(eventsWithSessions);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
 
 // Update event status
 exports.updateEventStatus = async (req, res) => {
@@ -380,14 +286,61 @@ exports.updateEventStatus = async (req, res) => {
   }
 };
 
-// Get event QR code
-exports.getEventQRCode = async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    const qrCodeUrl = await QRCode.toDataURL(event.qr_code);
-    res.json({ qr_code: event.qr_code, qr_code_url: qrCodeUrl });
+
+// Scan QR Code (for event check-in)
+exports.scanQRCode = async (req, res) => {
+  try {
+    const { qr_data } = req.body;
+
+    let qrInfo;
+    try {
+      qrInfo = JSON.parse(qr_data);
+    } catch (e) {
+      return res.status(400).json({ message: 'QR Code tidak valid' });
+    }
+
+    const sessionRegistration = await SessionRegistration.findOne({
+      registration_id: qrInfo.registration_id,
+      session_id: qrInfo.session_id,
+      user_id: qrInfo.user_id
+    })
+      .populate('registration_id', 'registration_id registration_status')
+      .populate('session_id', 'title date start_time end_time')
+      .populate('user_id', 'name email');
+
+    if (!sessionRegistration) {
+      return res.status(404).json({ message: 'QR Code tidak ditemukan' });
+    }
+
+    if (sessionRegistration.registration_id.registration_status !== 'confirmed') {
+      return res.status(400).json({ message: 'Registrasi belum dikonfirmasi' });
+    }
+
+    if (sessionRegistration.qr_used) {
+      return res.status(400).json({ 
+        message: 'QR Code sudah digunakan',
+        used_at: sessionRegistration.used_at
+      });
+    }
+
+    // Mark QR as used
+    sessionRegistration.qr_used = true;
+    sessionRegistration.used_at = new Date();
+    sessionRegistration.status = 'completed';
+    await sessionRegistration.save();
+
+    res.json({
+      message: 'Check-in berhasil',
+      participant: {
+        name: sessionRegistration.user_id.name,
+        email: sessionRegistration.user_id.email,
+        registration_id: sessionRegistration.registration_id.registration_id,
+        session: sessionRegistration.session_id,
+        checked_in_at: sessionRegistration.used_at
+      }
+    });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

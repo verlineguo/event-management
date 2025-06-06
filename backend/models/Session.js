@@ -9,6 +9,7 @@ const sessionSchema = new mongoose.Schema({
   end_time: { type: String, required: true }, 
   location: { type: String, required: true },
   speaker: { type: String, required: true },
+  session_fee: { type: Number, required: true },
   max_participants: { type: Number }, 
   session_order: { type: Number, default: 1 },
   status: { 

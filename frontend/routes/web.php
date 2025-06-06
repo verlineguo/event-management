@@ -86,6 +86,7 @@ Route::prefix('committee')
             Route::get('event/show/{id}', 'show')->name('committee.event.show');
             Route::delete('/event/{id}', 'destroy')->name('committee.event.destroy');
             Route::get('/event/search', 'search')->name('committee.event.search');
+            Route::patch('/event/{id}/status', 'updateStatus')->name('committee.event.status.update');
         });
     });
 
@@ -96,6 +97,8 @@ Route::prefix('member')
             Route::get('/home', action: 'index')->name('member.home');
             Route::get('/events', 'events')->name('member.events.index');
             Route::get('/events/{id}', 'showEvent')->name('member.events.show');
+            Route::get('/events/search', 'search')->name('member.event.search');
+
         });
 
         Route::controller(MemberRegistrationController::class)->group(function () {
@@ -103,7 +106,7 @@ Route::prefix('member')
             Route::post('/events/{id}/register', 'storeRegistration')->name('member.events.store-registration');
             Route::get('{id}/payment', 'showPayment')->name('member.events.payment');
             Route::post('{id}/payment', 'processPayment')->name('member.events.process-payment');
-            Route::get('{id}/success/{registration_id}', 'registrationSuccess')->name('member.event.registration-success');
+            Route::get('{id}/success/{registration_id}', 'registrationSuccess')->name('member.events.registration-success');
 
             Route::get('/registrations', 'myRegistrations')->name('member.myRegistrations.index');
             Route::get('/registrations/{id}', 'showRegistration')->name('member.myRegistrations.show');

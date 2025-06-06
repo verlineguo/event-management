@@ -26,7 +26,7 @@ exports.getAllPayments = async (req, res) => {
 // Get registration by ID
 exports.getPaymentById = async (req, res) => {
   try {
-    const registration = await Registration.findById(req.params.id)
+    const registration = await Registration.findById(req.params._id)
       .populate('user_id', 'name email phone')
       .populate('event_id', 'name registration_fee')
       .populate('payment_verified_by', 'name');
@@ -47,7 +47,7 @@ exports.updatePaymentStatus = async (req, res) => {
     const { payment_status, rejection_reason } = req.body;
     const financeUserId = req.user._id; // Dari JWT token
     
-    const registration = await Registration.findById(req.params.id);
+    const registration = await Registration.findById(req.params._id);
     if (!registration) {
       return res.status(404).json({ message: 'Registration not found' });
     }
@@ -107,7 +107,7 @@ exports.getPendingPaymentsCount = async (req, res) => {
 exports.bulkApprovePayments = async (req, res) => {
   try {
     const { registration_ids } = req.body;
-    const financeUserId = req.user.id;
+    const financeUserId = req.user._id;
 
     if (!Array.isArray(registration_ids) || registration_ids.length === 0) {
       return res.status(400).json({ message: 'Registration IDs array is required' });

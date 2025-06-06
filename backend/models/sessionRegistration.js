@@ -4,13 +4,14 @@ const sessionRegistrationSchema = new mongoose.Schema({
   registration_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Registration', required: true },
   session_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Session', required: true },
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  qr_code: { type: String, unique: true }, // QR code unik per sesi
+  qr_code: { type: String, sparse: true}, // QR code unik per sesi
   status: { 
     type: String, 
     enum: ['registered', 'cancelled', 'completed'], 
     default: 'registered' 
   },
   registered_at: { type: Date, default: Date.now },
+  qr_used: { type: Boolean },
 
 }, { timestamps: true });
 

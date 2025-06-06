@@ -75,10 +75,17 @@
                     <li>
                         <div class="dropdown-divider my-1"></div>
                     </li>
-                    <li>
-                        <a class="dropdown-item" href="javascript:void(0);">
-                            <i class="icon-base bx bx-power-off icon-md me-3"></i><span>Log Out</span>
+                    <li class="nav-item cta mr-md-2">
+                        <a href="#"
+                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                            class="nav-link">
+                            Logout
                         </a>
+
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                            @csrf
+                        </form>
+
                     </li>
                 </ul>
             </li>

@@ -22,6 +22,7 @@ class MemberRegistrationController extends Controller
             if (!$response->successful()) {
                 return back()->withErrors(['message' => 'Event tidak ditemukan']);
             }
+
             $event = $response->json();
 
             // Check if user already registered
@@ -29,6 +30,7 @@ class MemberRegistrationController extends Controller
             if ($registrationResponse->successful() && $registrationResponse->json()) {
                 return redirect()->route('member.events.show', $id)->with('info', 'Anda sudah terdaftar untuk event ini');
             }
+
 
             // Format date range and location
             $this->formatEventDisplay($event);
@@ -150,10 +152,9 @@ class MemberRegistrationController extends Controller
                 }
             }
 
-            // Submit registration to API
+
 
             $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/registrations', $registrationData);
-
             if ($response->successful()) {
                 // Clear session data
                 session()->forget('registration_data');
@@ -280,23 +281,20 @@ class MemberRegistrationController extends Controller
 
             if (!$response->successful()) {
                 return redirect()
-                    ->route('member.registrations.index')
+                    ->route('member.myRegistrations.index')
                     ->withErrors(['message' => 'QR Code tidak ditemukan atau belum tersedia']);
             }
-
+            
             $qrData = $response->json();
-
             return view('member.registrations.qr-codes', compact('qrData'));
         } catch (\Exception $e) {
             return redirect()
-                ->route('member.registrations.index')
+                ->route('member.myRegistrations.index')
                 ->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
     }
 
-    /**
-     * Save draft registration (AJAX)
-     */
+   
     public function saveDraftRegistration(Request $request, $id)
     {
         try {
@@ -338,9 +336,7 @@ class MemberRegistrationController extends Controller
         }
     }
 
-    /**
-     * Get draft registration (AJAX)
-     */
+    
     public function getDraft($id)
     {
         try {
@@ -355,9 +351,7 @@ class MemberRegistrationController extends Controller
         }
     }
 
-    /**
-     * Delete draft registration (AJAX)
-     */
+
     public function deleteDraft($id)
     {
         try {

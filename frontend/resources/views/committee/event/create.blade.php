@@ -68,27 +68,11 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-4">
-                                <label for="registration_fee" class="form-label">Registration Fee</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">Rp</span>
-                                    <input type="number" class="form-control" id="registration_fee" name="registration_fee" 
-                                        value="{{ old('registration_fee', 0) }}" min="0" step="1000"
-                                        placeholder="0" required>
-                                </div>
-                                <div class="form-text">Enter 0 for free events</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-4">
-                                <label for="max_participants" class="form-label">Max Participants</label>
-                                <input type="number" class="form-control" id="max_participants" name="max_participants" 
-                                    value="{{ old('max_participants') }}" min="1"
-                                    placeholder="Enter maximum number of participants" required>
-                            </div>
-                        </div>
+                    <div class="mb-4">
+                        <label for="max_participants" class="form-label">Max Participants</label>
+                        <input type="number" class="form-control" id="max_participants" name="max_participants" 
+                            value="{{ old('max_participants') }}" min="1"
+                            placeholder="Enter maximum number of participants" required>
                     </div>
 
                     <div class="mb-4">
@@ -180,6 +164,21 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Session Fee Field -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Session Fee</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rp</span>
+                                                <input type="number" class="form-control" name="sessions[0][session_fee]" 
+                                                    value="0" min="0" step="1000" placeholder="0" required>
+                                            </div>
+                                            <div class="form-text">Enter 0 for free session</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -252,13 +251,6 @@
 
             // Set minimum date to today for all date inputs
             setMinDate();
-
-            // Format registration fee input
-            const feeInput = document.getElementById('registration_fee');
-            feeInput.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                e.target.value = value;
-            });
         });
 
         // Set minimum date to today
@@ -338,6 +330,20 @@
                                 <label class="form-label">Max Participants (Optional)</label>
                                 <input type="number" class="form-control" name="sessions[${sessionCount}][max_participants]" 
                                     placeholder="Leave empty to use event limit" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Session Fee</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" class="form-control" name="sessions[${sessionCount}][session_fee]" 
+                                        value="0" min="0" step="1000" placeholder="0" required>
+                                </div>
+                                <div class="form-text">Enter 0 for free session</div>
                             </div>
                         </div>
                     </div>

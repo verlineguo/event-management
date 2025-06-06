@@ -2,6 +2,8 @@ const Event = require('../models/Event');
 const Session = require('../models/Session');
 const Registration = require('../models/Registration');
 const SessionRegistration = require('../models/sessionRegistration');
+
+
 exports.getFeaturedEvents = async (req, res) => {
   try {
     const events = await Event.find({ status: 'open' })
@@ -15,77 +17,60 @@ exports.getFeaturedEvents = async (req, res) => {
         const sessions = await Session.find({ event_id: event._id })
           .sort({ session_order: 1, date: 1 });
 
-        // Count total event registrations
-        const eventRegistrationCount = await Registration.countDocuments({
-          event_id: event._id,
-          registration_status: { $in: ['registered', 'confirmed'] }
-        });
-
-        // Get session-specific registration counts
-        const sessionsWithQuota = await Promise.all(
+        // Process sessions with availability info
+        const sessionsWithAvailability = await Promise.all(
           sessions.map(async (session) => {
-            const sessionRegistrationCount = await SessionRegistration.countDocuments({
+            const registeredCount = await SessionRegistration.countDocuments({
               session_id: session._id,
               status: { $in: ['registered', 'completed'] }
             });
 
-            // Use session max_participants if available, otherwise use event max_participants
-            const sessionMaxParticipants = session.max_participants || event.max_participants;
-            
-            // PERBAIKAN: available_slots = kapasitas - yang sudah daftar
-            const sessionAvailableSlots = Math.max(0, sessionMaxParticipants - sessionRegistrationCount);
-            
-            // PERBAIKAN: quota_percentage = persentase TERISI (bukan tersedia)
-            const quotaPercentage = sessionMaxParticipants > 0 
-              ? Math.round((sessionRegistrationCount / sessionMaxParticipants) * 100) 
-              : 0;
+            // max_participants di session = kuota tersedia (bukan total kapasitas)
+            const availableSlots = session.max_participants || 0;
+            const isAvailable = availableSlots > 0;
 
             return {
-              ...session.toObject(),
-              registered_count: sessionRegistrationCount, // Yang sudah daftar
-              max_participants: sessionMaxParticipants,   // Kapasitas maksimum
-              available_slots: sessionAvailableSlots,     // Sisa slot tersedia
-              quota_percentage: quotaPercentage,          // Persentase terisi
-              is_full: sessionAvailableSlots <= 0,        // Penuh jika sisa slot = 0
-              is_almost_full: quotaPercentage >= 80       // Hampir penuh jika 80% terisi
+              _id: session._id,
+              title: session.title,
+              date: session.date,
+              start_time: session.start_time,
+              end_time: session.end_time,
+              location: session.location,
+              speaker: session.speaker,
+              session_fee: session.session_fee,
+              available_slots: availableSlots,
+              is_available: isAvailable,
+              session_order: session.session_order
             };
           })
         );
 
-        // Calculate overall event availability
-        const totalEventSlots = event.max_participants; // Kapasitas total event
+        // Check if event has any available sessions
+        const hasAvailableSessions = sessionsWithAvailability.some(session => session.is_available);
         
-        // PERBAIKAN: available_slots = kapasitas - yang sudah daftar
-        const eventAvailableSlots = Math.max(0, totalEventSlots - eventRegistrationCount);
+        // Get earliest and latest session dates for display
+        const sessionDates = sessionsWithAvailability
+          .map(s => s.date)
+          .filter(date => date)
+          .sort();
         
-        // PERBAIKAN: quota_percentage = persentase TERISI
-        const eventQuotaPercentage = totalEventSlots > 0 
-          ? Math.round((eventRegistrationCount / totalEventSlots) * 100) 
-          : 0;
-
-        // Check if any session is still available
-        const hasAvailableSessions = sessionsWithQuota.some(session => session.available_slots > 0);
-
-        // Calculate average session occupancy for display
-        const avgSessionOccupancy = sessionsWithQuota.length > 0 
-          ? Math.round(sessionsWithQuota.reduce((sum, session) => sum + session.quota_percentage, 0) / sessionsWithQuota.length) 
-          : 0;
+        const firstDate = sessionDates.length > 0 ? sessionDates[0] : null;
+        const lastDate = sessionDates.length > 0 ? sessionDates[sessionDates.length - 1] : null;
 
         return {
-          ...event.toObject(),
-          sessions: sessionsWithQuota,
-          
-          // Event quota information (DIPERBAIKI)
-          registered_count: eventRegistrationCount,    // Total yang sudah daftar
-          max_participants: totalEventSlots,           // Kapasitas maksimum
-          available_slots: eventAvailableSlots,        // Sisa slot tersedia
-          quota_percentage: eventQuotaPercentage,      // Persentase terisi
-          is_full: eventAvailableSlots <= 0,           // Event penuh
-          is_almost_full: eventQuotaPercentage >= 80,  // Event hampir penuh
-          
+          _id: event._id,
+          name: event.name,
+          description: event.description,
+          poster: event.poster,
+          category: event.category_id?.name || 'General',
+          status: event.status,
+          sessions: sessionsWithAvailability,
+          sessions_count: sessionsWithAvailability.length,
           has_available_sessions: hasAvailableSessions,
-          avg_session_occupancy: avgSessionOccupancy,
-          sessions_count: sessionsWithQuota.length
+          first_session_date: firstDate,
+          last_session_date: lastDate,
+          min_fee: Math.min(...sessionsWithAvailability.map(s => s.session_fee)),
+          created_at: event.createdAt
         };
       })
     );
@@ -95,6 +80,7 @@ exports.getFeaturedEvents = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // Search events with filters
 exports.searchEvents = async (req, res) => {

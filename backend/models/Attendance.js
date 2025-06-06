@@ -15,6 +15,6 @@
     },
   }, { timestamps: true });
   
-  attendanceSchema.index({ session_id: 1, registration_id: 1 }, { unique: true });
+attendanceSchema.index({ session_id: 1, session_registration_id: 1 }, { unique: true });
 
 module.exports = mongoose.model('Attendance', attendanceSchema);

@@ -18,7 +18,7 @@
                             <div class="text-center">
                                 <img src="{{ asset('storage/' . $event['poster']) }}" class="img-fluid rounded"
                                     alt="Event Poster"
-                                    style="max-height: 500px; object-fit: contain; cursor: pointer; max-width: 100%;"
+                                    style="max-height: 400px; object-fit: contain; cursor: pointer; max-width: 100%;"
                                     onclick="showImageModal(this.src)">
                             </div>
                         @else
@@ -29,179 +29,239 @@
                         @endif
                     </div>
                 </div>
-
-
             </div>
+
             <!-- Event Details Card -->
             <div class="col-md-6 mb-4">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Event Details</h5>
-                            <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                                    data-bs-toggle="dropdown">
-                                    <i class="bx bx-dots-vertical-rounded"></i>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('committee.event.edit', $event['_id']) }}">
-                                            <i class="bx bx-edit-alt me-2"></i>Edit Event
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <button class="dropdown-item text-danger"
-                                            onclick="deleteEvent('{{ $event['_id'] }}')">
-                                            <i class="bx bx-trash me-2"></i>Delete Event
-                                        </button>
-                                    </li>
-                                </ul>
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Event Details</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown">
+                                <i class="bx bx-dots-vertical-rounded"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('committee.event.edit', $event['_id']) }}">
+                                        <i class="bx bx-edit-alt me-2"></i>Edit Event
+                                    </a>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item text-danger" onclick="deleteEvent('{{ $event['_id'] }}')">
+                                        <i class="bx bx-trash me-2"></i>Delete Event
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h4 class="mb-9 mt-2">{{ $event['name'] }}</h4>
+
+                        @if (isset($event['description']) && !empty($event['description']))
+                            <div class="mb-6">
+                                <div class="d-flex align-items-start">
+                                    <i class="bx bx-info-circle text-primary me-3 mt-1"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Description</small>
+                                        <span>{{ $event['description'] }}</span>
+                                    </div>
+                                </div>
                             </div>
+                        @endif
+
+                        <div class="mb-6">
+                            <div class="d-flex align-items-start">
+                                <i class="bx bx-category text-primary me-3 mt-1"></i>
+                                <div>
+                                    <small class="text-muted d-block">Event Category</small>
+                                    <span>{{ $event['category_id']['name'] }} </span>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="mb-6">
+                            <div class="d-flex align-items-start">
+                                <i class="bx bx-calendar-event text-primary me-3 mt-1"></i>
+                                <div>
+                                    <small class="text-muted d-block">Total Sessions</small>
+                                    <span>{{ isset($event['sessions']) ? count($event['sessions']) : 0 }} sessions</span>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+
+                        <div class="mb-6">
+                            <div class="d-flex align-items-start">
+                                <i class="bx bx-info-circle text-primary me-3 mt-1"></i>
+                                <div>
+                                    <small class="text-muted d-block">Status</small>
+                                    @php
+                                        $statusClasses = [
+                                            'open' => 'bg-success',
+                                            'closed' => 'bg-secondary',
+                                            'ongoing' => 'bg-warning',
+                                            'cancelled' => 'bg-danger',
+                                            'completed' => 'bg-info',
+                                        ];
+                                        $statusClass = $statusClasses[$event['status']] ?? 'bg-secondary';
+                                    @endphp
+                                    <span class="badge {{ $statusClass }}">{{ ucfirst($event['status']) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Sessions -->
+        @if (isset($event['sessions']) && count($event['sessions']) > 0)
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Event Sessions</h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-12">
-                                    <h4 class="mb-3">{{ $event['name'] }}</h4>
-
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <i class="bx bx-calendar text-primary me-2"></i>
-                                                <div>
-                                                    <small class="text-muted d-block">Date</small>
-                                                    <span>{{ \Carbon\Carbon::parse($event['date'])->format('l, d F Y') }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <i class="bx bx-time text-primary me-2"></i>
-                                                <div>
-                                                    <small class="text-muted d-block">Time</small>
-                                                    <span>{{ \Carbon\Carbon::parse($event['time'])->format('H:i') }}
-                                                        WIB</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <i class="bx bx-map text-primary me-2"></i>
-                                                <div>
-                                                    <small class="text-muted d-block">Location</small>
-                                                    <span>{{ $event['location'] }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <i class="bx bx-microphone text-primary me-2"></i>
-                                                <div>
-                                                    <small class="text-muted d-block">Speaker</small>
-                                                    <span>{{ $event['speaker'] }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <i class="bx bx-money text-primary me-2"></i>
-                                                <div>
-                                                    <small class="text-muted d-block">Registration Fee</small>
-                                                    <span class="fw-bold">
-                                                        @if ($event['registration_fee'] == 0)
-                                                            <span class="badge bg-success">FREE</span>
-                                                        @else
-                                                            Rp {{ number_format($event['registration_fee'], 0, ',', '.') }}
-                                                        @endif
+                                @foreach ($event['sessions'] as $index => $session)
+                                    <div class="col-md-6 col-lg-4 mb-4">
+                                        <div class="card h-100 border-left-primary">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title mb-0">{{ $session['title'] }}</h6>
+                                                    @php
+                                                        $sessionStatusClasses = [
+                                                            'scheduled' => 'bg-primary',
+                                                            'ongoing' => 'bg-warning',
+                                                            'completed' => 'bg-success',
+                                                            'cancelled' => 'bg-danger',
+                                                        ];
+                                                        $sessionStatusClass =
+                                                            $sessionStatusClasses[$session['status']] ?? 'bg-secondary';
+                                                    @endphp
+                                                    <span class="badge {{ $sessionStatusClass }} badge-sm">
+                                                        {{ ucfirst($session['status']) }}
                                                     </span>
                                                 </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <i class="bx bx-group text-primary me-2"></i>
-                                                <div>
-                                                    <small class="text-muted d-block">Max Participants</small>
-                                                    <span>{{ $event['max_participants'] ?? 'Unlimited' }}
-                                                        participants</span>
+
+                                                @if (isset($session['description']) && !empty($session['description']))
+                                                    <p class="card-text text-muted small mb-3">
+                                                        {{ $session['description'] }}</p>
+                                                @endif
+
+                                                <div class="session-details">
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <i class="bx bx-calendar text-primary me-2 small"></i>
+                                                        <small>{{ \Carbon\Carbon::parse($session['date'])->format('d M Y') }}</small>
+                                                    </div>
+
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <i class="bx bx-time text-primary me-2 small"></i>
+                                                        <small>{{ $session['start_time'] }} - {{ $session['end_time'] }}
+                                                            WIB</small>
+                                                    </div>
+
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <i class="bx bx-map text-primary me-2 small"></i>
+                                                        <small>{{ $session['location'] }}</small>
+                                                    </div>
+
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <i class="bx bx-microphone text-primary me-2 small"></i>
+                                                        <small>{{ $session['speaker'] }}</small>
+                                                    </div>
+
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <i class="bx bx-money text-primary me-2 small"></i>
+                                                        <small>
+                                                            @if ($session['session_fee'] == 0)
+                                                                <span class="badge bg-success badge-sm">FREE</span>
+                                                            @else
+                                                                Rp
+                                                                {{ number_format($session['session_fee'], 0, ',', '.') }}
+                                                            @endif
+                                                        </small>
+                                                    </div>
+
+                                                    <!-- Session Registration Statistics -->
+                                                    @if (isset($session['max_participants']) && $session['max_participants'])
+                                                        @php
+                                                            // Asumsi ada data session registration count
+                                                            $sessionRegistrationCount =
+                                                                $sessionRegistrations[$session['_id']] ?? 0;
+                                                            $availableSlots =
+                                                                $session['max_participants'] -
+                                                                $sessionRegistrationCount;
+                                                            $percentage =
+                                                                ($sessionRegistrationCount /
+                                                                    $session['max_participants']) *
+                                                                100;
+                                                        @endphp
+
+                                                        <div class="mt-3 pt-3 border-top">
+                                                            <small class="text-muted d-block mb-2">Registration
+                                                                Status</small>
+
+                                                            <div class="row text-center mb-2">
+                                                                <div class="col-6">
+                                                                    <div class="border-end">
+                                                                        <strong
+                                                                            class="text-primary d-block">{{ $sessionRegistrationCount }}</strong>
+                                                                        <small class="text-muted">Registered</small>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-6">
+                                                                    <strong
+                                                                        class="text-success d-block">{{ $availableSlots }}</strong>
+                                                                    <small class="text-muted">Available</small>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="progress mb-1" style="height: 6px;">
+                                                                <div class="progress-bar {{ $percentage >= 90 ? 'bg-danger' : ($percentage >= 70 ? 'bg-warning' : 'bg-success') }}"
+                                                                    role="progressbar" style="width: {{ $percentage }}%"
+                                                                    aria-valuenow="{{ $percentage }}" aria-valuemin="0"
+                                                                    aria-valuemax="100">
+                                                                </div>
+                                                            </div>
+                                                            <small class="text-muted">{{ number_format($percentage, 1) }}%
+                                                                filled</small>
+                                                        </div>
+                                                    @else
+                                                        <div class="mt-3 pt-3 border-top">
+                                                            <div class="d-flex align-items-center">
+                                                                <i class="bx bx-group text-success me-2 small"></i>
+                                                                <small class="text-success">Unlimited participants</small>
+                                                            </div>
+                                                            @php
+                                                                $sessionRegistrationCount =
+                                                                    $sessionRegistrations[$session['_id']] ?? 0;
+                                                            @endphp
+                                                            @if ($sessionRegistrationCount > 0)
+                                                                <div class="mt-2">
+                                                                    <strong
+                                                                        class="text-primary">{{ $sessionRegistrationCount }}</strong>
+                                                                    <small class="text-muted">registered</small>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div class="mb-4">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bx bx-info-circle text-primary me-2"></i>
-                                            <div>
-                                                <small class="text-muted d-block">Status</small>
-                                                @php
-                                                    $statusClasses = [
-                                                        'open' => 'bg-success',
-                                                        'closed' => 'bg-secondary',
-                                                        'ongoing' => 'bg-warning',
-                                                        'cancelled' => 'bg-danger',
-                                                        'completed' => 'bg-info',
-                                                    ];
-                                                    $statusClass = $statusClasses[$event['status']] ?? 'bg-secondary';
-                                                @endphp
-                                                <span
-                                                    class="badge {{ $statusClass }}">{{ ucfirst($event['status']) }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Registration Statistics</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row text-center">
-                                <div class="col-6">
-                                    <div class="border-end">
-                                        <h4 class="mb-1 text-primary">{{ $registrationCount ?? 0 }}</h4>
-                                        <small class="text-muted">Registered</small>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <h4 class="mb-1 text-success">
-                                        @if ($event['max_participants'])
-                                            {{ $event['max_participants'] - ($registrationCount ?? 0) }}
-                                        @else
-                                            ∞
-                                        @endif
-                                    </h4>
-                                    <small class="text-muted">Available</small>
-                                </div>
-                            </div>
-
-                            @if ($event['max_participants'])
-                                <div class="mt-3">
-                                    @php
-                                        $percentage = (($registrationCount ?? 0) / $event['max_participants']) * 100;
-                                    @endphp
-                                    <div class="progress">
-                                        <div class="progress-bar" role="progressbar" style="width: {{ $percentage }}%"
-                                            aria-valuenow="{{ $percentage }}" aria-valuemin="0" aria-valuemax="100">
-                                        </div>
-                                    </div>
-                                    <small class="text-muted">{{ number_format($percentage, 1) }}% filled</small>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
+                </div>
             </div>
-            <!-- Registration Statistics -->
-
-
-
-        </div>
+        @endif
 
         <!-- Event Actions -->
         <div class="row">
@@ -304,26 +364,45 @@
         // Print event details
         function printEvent() {
             const eventName = '{{ $event['name'] }}';
-            const eventDate = '{{ \Carbon\Carbon::parse($event['date'])->format('l, d F Y') }}';
-            const eventTime = '{{ \Carbon\Carbon::parse($event['time'])->format('H:i') }}';
-            const eventLocation = '{{ $event['location'] }}';
-            const eventSpeaker = '{{ $event['speaker'] }}';
-            const eventFee =
-                '{{ $event['registration_fee'] == 0 ? 'FREE' : 'Rp ' . number_format($event['registration_fee'], 0, ',', '.') }}';
+            const eventDescription = '{{ $event['description'] ?? '' }}';
+            const eventStatus = '{{ ucfirst($event['status']) }}';
 
-            const printContent = `
+            let printContent = `
                 <div style="padding: 20px; font-family: Arial, sans-serif;">
                     <h1 style="text-align: center; color: #333;">${eventName}</h1>
                     <hr>
                     <table style="width: 100%; margin-top: 20px;">
-                        <tr><td style="padding: 10px; font-weight: bold;">Date:</td><td style="padding: 10px;">${eventDate}</td></tr>
-                        <tr><td style="padding: 10px; font-weight: bold;">Time:</td><td style="padding: 10px;">${eventTime} WIB</td></tr>
-                        <tr><td style="padding: 10px; font-weight: bold;">Location:</td><td style="padding: 10px;">${eventLocation}</td></tr>
-                        <tr><td style="padding: 10px; font-weight: bold;">Speaker:</td><td style="padding: 10px;">${eventSpeaker}</td></tr>
-                        <tr><td style="padding: 10px; font-weight: bold;">Registration Fee:</td><td style="padding: 10px;">${eventFee}</td></tr>
+                        <tr><td style="padding: 10px; font-weight: bold;">Description:</td><td style="padding: 10px;">${eventDescription}</td></tr>
+                        <tr><td style="padding: 10px; font-weight: bold;">Status:</td><td style="padding: 10px;">${eventStatus}</td></tr>
                     </table>
-                </div>
             `;
+
+            @if (isset($event['sessions']) && count($event['sessions']) > 0)
+                printContent += `
+                    <h2 style="margin-top: 30px; color: #333;">Sessions</h2>
+                    <hr>
+                `;
+
+                @foreach ($event['sessions'] as $session)
+                    @php
+                        $sessionRegistrationCount = $sessionRegistrations[$session['_id']] ?? 0;
+                    @endphp
+                    printContent += `
+                        <div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 15px;">
+                            <h3 style="color: #555;">{{ $session['title'] }}</h3>
+                            <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($session['date'])->format('d M Y') }}</p>
+                            <p><strong>Time:</strong> {{ $session['start_time'] }} - {{ $session['end_time'] }} WIB</p>
+                            <p><strong>Location:</strong> {{ $session['location'] }}</p>
+                            <p><strong>Speaker:</strong> {{ $session['speaker'] }}</p>
+                            <p><strong>Fee:</strong> {{ $session['session_fee'] == 0 ? 'FREE' : 'Rp ' . number_format($session['session_fee'], 0, ',', '.') }}</p>
+                            <p><strong>Status:</strong> {{ ucfirst($session['status']) }}</p>
+                            <p><strong>Registered:</strong> {{ $sessionRegistrationCount }}{{ isset($session['max_participants']) && $session['max_participants'] ? ' / ' . $session['max_participants'] : '' }}</p>
+                        </div>
+                    `;
+                @endforeach
+            @endif
+
+            printContent += `</div>`;
 
             const printWindow = window.open('', '_blank');
             printWindow.document.write(printContent);

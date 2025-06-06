@@ -2,241 +2,18 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('guest/css/event.css') }}">
-    <style>
-       
 
-        .success-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .success-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #28a745, #20c997);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            animation: successPulse 2s ease-in-out infinite;
-        }
-
-        .success-icon i {
-            font-size: 36px;
-            color: white;
-        }
-
-        @keyframes successPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .success-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #28a745;
-            margin-bottom: 10px;
-        }
-
-        .success-subtitle {
-            font-size: 16px;
-            color: #666;
-            line-height: 1.5;
-        }
-
-        .registration-details {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid #e9ecef;
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f8f9fa;
-        }
-
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-
-        .detail-label {
-            font-weight: 600;
-            color: #495057;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .detail-value {
-            font-weight: 500;
-            color: #212529;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-confirmed {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .next-steps {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-
-        .next-steps h4 {
-            color: #495057;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .steps-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .steps-list li {
-            padding: 8px 0;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .step-number {
-            background: #007bff;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,123,255,0.3);
-            color: white;
-            text-decoration: none;
-        }
-
-        .btn-outline {
-            background: white;
-            border: 2px solid #007bff;
-            color: #007bff;
-        }
-
-        .btn-outline:hover {
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-        }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(40,167,69,0.3);
-            color: white;
-            text-decoration: none;
-        }
-
-        @media (max-width: 768px) {
-            .success-container {
-                padding: 15px;
-            }
-
-            .registration-details {
-                padding: 20px;
-            }
-
-            .detail-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-    </style>
 @endsection
 
 @section('content')
     <div class="registration-container">
         <!-- Success Header -->
-        <div class="success-header">
-            <div class="success-icon">
+        <div class="header">
+            <div class="icon">
                 <i class="bx bx-check"></i>
             </div>
-            <h1 class="success-title">Registrasi Berhasil!</h1>
-            <p class="success-subtitle">
+            <h1 class="title">Registrasi Berhasil!</h1>
+            <p class="subtitle">
                 @if(($registration['payment_amount'] ?? 0) > 0)
                     Terima kasih! Registrasi Anda telah berhasil disubmit. Silakan tunggu verifikasi pembayaran dari tim kami.
                 @else
@@ -247,7 +24,7 @@
 
         <!-- Registration Details -->
         <div class="registration-details">
-            <h3 class="section-title" style="margin-bottom: 20px;">
+            <h3 class="section-title">
                 <i class="bx bx-receipt"></i>
                 Detail Registrasi
             </h3>

@@ -30,7 +30,11 @@
                                 <label for="category" class="form-label">Category</label>
                                 <select class="form-select" id="category" name="category">
                                     <option value="">All Categories</option>
-                                    <!-- Categories will be loaded dynamically -->
+                                     @foreach($categories as $category)
+                                <option value="{{ $category['_id'] }}" {{ old('category_id') == $category['_id'] ? 'selected' : '' }}>
+                                    {{ $category['name']  }}
+                                </option>
+                            @endforeach
                                 </select>
                             </div>
                         </div>
@@ -75,7 +79,7 @@
                             <th>Name</th>
                             <th>Category</th>
                             <th>Sessions</th>
-                            <th>Fee</th>
+                            <th>Session Fees</th>
                             <th>Max Participants</th>
                             <th>Status</th>
                             <th>Created</th>
@@ -83,7 +87,7 @@
                         </tr>
                     </thead>
                     <tbody class="table-border-bottom-0">
-                        @forelse ($events as $event)
+                        @foreach ($events as $event)
                             <tr>
                                 <td>
                                     @if(isset($event['poster']) && !empty($event['poster']))
@@ -118,38 +122,35 @@
                                 </td>
                                 <td>
                                     @if(isset($event['sessions']) && count($event['sessions']) > 0)
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" 
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                                {{ count($event['sessions']) }} Session(s)
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                @foreach($event['sessions'] as $session)
-                                                    <li>
-                                                        <div class="dropdown-item-text">
-                                                            <strong>{{ $session['title'] }}</strong><br>
-                                                            <small class="text-muted">
-                                                                {{ \Carbon\Carbon::parse($session['date'])->format('d M Y') }} 
-                                                                {{ $session['start_time'] }} - {{ $session['end_time'] }}
-                                                            </small><br>
-                                                            <small class="text-muted">{{ $session['location'] }}</small>
-                                                        </div>
-                                                    </li>
-                                                    @if(!$loop->last)
-                                                        <li><hr class="dropdown-divider"></li>
-                                                    @endif
-                                                @endforeach
-                                            </ul>
-                                        </div>
+                                        <button class="btn btn-sm btn-outline-primary sessions-btn" 
+                                                data-event-id="{{ $event['_id'] }}" 
+                                                data-event-name="{{ $event['name'] }}"
+                                                data-sessions="{{ json_encode($event['sessions']) }}">
+                                            <i class="bx bx-calendar me-1"></i>
+                                            {{ count($event['sessions']) }} Session(s)
+                                        </button>
                                     @else
                                         <span class="text-muted">No sessions</span>
                                     @endif
                                 </td>
                                 <td>
-                                    @if(isset($event['registration_fee']) && $event['registration_fee'] > 0)
-                                        <span class="badge bg-info">Rp {{ number_format($event['registration_fee'], 0, ',', '.') }}</span>
+                                    @if(isset($event['sessions']) && count($event['sessions']) > 0)
+                                        @php
+                                            $sessionFees = collect($event['sessions'])->pluck('session_fee')->filter();
+                                            $minFee = $sessionFees->min();
+                                            $maxFee = $sessionFees->max();
+                                        @endphp
+                                        @if($sessionFees->count() > 0)
+                                            @if($minFee == $maxFee)
+                                                <span class="badge bg-info">Rp {{ number_format($minFee, 0, ',', '.') }}</span>
+                                            @else
+                                                <span class="badge bg-info">Rp {{ number_format($minFee, 0, ',', '.') }} - {{ number_format($maxFee, 0, ',', '.') }}</span>
+                                            @endif
+                                        @else
+                                            <span class="badge bg-success">Free</span>
+                                        @endif
                                     @else
-                                        <span class="badge bg-success">Free</span>
+                                        <span class="text-muted">-</span>
                                     @endif
                                 </td>
                                 <td>
@@ -160,43 +161,48 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        @switch($event['status'])
-                                            @case('open')
-                                                <span class="badge bg-success">{{ ucfirst($event['status']) }}</span>
-                                                @break
-                                            @case('closed')
-                                                <span class="badge bg-danger">{{ ucfirst($event['status']) }}</span>
-                                                @break
-                                            @case('cancelled')
-                                                <span class="badge bg-dark">{{ ucfirst($event['status']) }}</span>
-                                                @break
-                                            @case('completed')
-                                                <span class="badge bg-info">{{ ucfirst($event['status']) }}</span>
-                                                @break
-                                            @default
-                                                <span class="badge bg-secondary">{{ ucfirst($event['status']) }}</span>
-                                        @endswitch
-                                        
-                                        <!-- Quick Status Update -->
-                                        <div class="dropdown ms-2">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="bx bx-edit"></i>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item status-update" href="#" 
-                                                       data-id="{{ $event['_id'] }}" data-status="open">Open</a></li>
-                                                <li><a class="dropdown-item status-update" href="#" 
-                                                       data-id="{{ $event['_id'] }}" data-status="closed">Closed</a></li>
-                                                <li><a class="dropdown-item status-update" href="#" 
-                                                       data-id="{{ $event['_id'] }}" data-status="cancelled">Cancelled</a></li>
-                                                <li><a class="dropdown-item status-update" href="#" 
-                                                       data-id="{{ $event['_id'] }}" data-status="completed">Completed</a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </td>
+    <div class="d-flex align-items-center">
+        <span class="badge bg-{{ $event['status'] === 'open' ? 'success' : ($event['status'] === 'closed' ? 'danger' : ($event['status'] === 'cancelled' ? 'dark' : 'info')) }}">
+            {{ ucfirst($event['status']) }}
+        </span>
+        
+        <button class="btn btn-sm btn-outline-secondary ms-2" 
+                data-bs-toggle="modal" 
+                data-bs-target="#statusModal{{ $event['_id'] }}">
+            <i class="bx bx-edit"></i>
+        </button>
+    </div>
+    
+    <!-- Modal untuk update status -->
+    <div class="modal fade" id="statusModal{{ $event['_id'] }}" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">Update Status</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ route('committee.event.status.update', $event['_id']) }}" method="POST">
+                    @csrf @method('PATCH')
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">Select Status:</label>
+                            <select name="status" class="form-select" required>
+                                <option value="open" {{ $event['status'] === 'open' ? 'selected' : '' }}>Open</option>
+                                <option value="closed" {{ $event['status'] === 'closed' ? 'selected' : '' }}>Closed</option>
+                                <option value="cancelled" {{ $event['status'] === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                <option value="completed" {{ $event['status'] === 'completed' ? 'selected' : '' }}>Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Status</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</td>
                                 <td>
                                     @if(isset($event['createdAt']))
                                         {{ \Carbon\Carbon::parse($event['createdAt'])->format('d M Y') }}
@@ -206,11 +212,6 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <!-- QR Code -->
-                                        <button type="button" class="btn btn-sm btn-secondary qr-btn" 
-                                                data-id="{{ $event['_id'] }}" title="Show QR Code">
-                                            <i class="bx bx-qr"></i>
-                                        </button>
                                         
                                         <!-- Show -->
                                         <a href="{{ route('committee.event.show', $event['_id']) }}" 
@@ -237,20 +238,8 @@
                                     </div>
                                 </td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="text-center py-4">
-                                    <div class="d-flex flex-column align-items-center">
-                                        <i class="bx bx-calendar-x text-muted" style="font-size: 48px;"></i>
-                                        <h6 class="text-muted mt-2">No events found</h6>
-                                        <p class="text-muted">Create your first event to get started</p>
-                                        <a href="{{ route('committee.event.create') }}" class="btn btn-primary">
-                                            <i class="bx bx-plus me-1"></i>Create Event
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
+                        
+                        @endforeach
                     </tbody>
                 </table>
             </div>
@@ -275,19 +264,17 @@
         </div>
     </div>
 
-    <!-- QR Code Modal -->
-    <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+    <!-- Sessions Modal -->
+    <div class="modal fade" id="sessionsModal" tabindex="-1" aria-labelledby="sessionsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="qrModalLabel">Event QR Code</h5>
+                    <h5 class="modal-title" id="sessionsModalLabel">Event Sessions</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body text-center">
-                    <div id="qrCodeContainer">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
+                <div class="modal-body">
+                    <div id="sessionsContainer">
+                        <!-- Sessions will be loaded here -->
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -296,6 +283,8 @@
             </div>
         </div>
     </div>
+
+
 @endsection
 
 @section('scripts')
@@ -325,11 +314,14 @@
                 updateEventStatus(eventId, newStatus);
             });
 
-            // QR Code handler
-            $('.qr-btn').on('click', function() {
-                const eventId = $(this).data('id');
-                showQRCode(eventId);
+            // Sessions modal handler
+            $('.sessions-btn').on('click', function() {
+                const eventName = $(this).data('event-name');
+                const sessions = $(this).data('sessions');
+                showSessionsModal(eventName, sessions);
             });
+
+   
 
             // Delete confirmation
             $(document).on('click', '.delete-btn', function() {
@@ -376,6 +368,64 @@
             // For now, this is a placeholder
         }
 
+        // Show sessions modal
+        function showSessionsModal(eventName, sessions) {
+            $('#sessionsModalLabel').text(`${eventName} - Sessions`);
+            
+            let sessionsHtml = '';
+            if (sessions && sessions.length > 0) {
+                sessions.forEach((session, index) => {
+                    const sessionDate = new Date(session.date).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    
+                    const sessionFee = session.session_fee ? `Rp ${new Intl.NumberFormat('id-ID').format(session.session_fee)}` : 'Free';
+                    
+                    sessionsHtml += `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6 class="card-title mb-2">
+                                            <i class="bx bx-calendar me-2"></i>${session.title}
+                                        </h6>
+                                        <p class="card-text text-muted mb-2">
+                                            <i class="bx bx-time me-2"></i>
+                                            ${sessionDate} • ${session.start_time} - ${session.end_time}
+                                        </p>
+                                        <p class="card-text text-muted mb-0">
+                                            <i class="bx bx-map me-2"></i>${session.location}
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <div class="d-flex justify-content-end align-items-center h-100">
+                                            <span class="badge ${session.session_fee && session.session_fee > 0 ? 'bg-info' : 'bg-success'} fs-6">
+                                                ${sessionFee}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                sessionsHtml = `
+                    <div class="text-center py-4">
+                        <i class="bx bx-calendar-x text-muted" style="font-size: 48px;"></i>
+                        <h6 class="text-muted mt-2">No sessions available</h6>
+                    </div>
+                `;
+            }
+            
+            $('#sessionsContainer').html(sessionsHtml);
+            
+            const modal = new bootstrap.Modal(document.getElementById('sessionsModal'));
+            modal.show();
+        }
+
         // Update event status
         function updateEventStatus(eventId, status) {
             $.ajax({
@@ -408,35 +458,7 @@
             });
         }
 
-        // Show QR Code
-        function showQRCode(eventId) {
-            $('#qrCodeContainer').html(`
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            `);
-            
-            const modal = new bootstrap.Modal(document.getElementById('qrModal'));
-            modal.show();
-
-            $.ajax({
-                url: `/committee/events/${eventId}/qr-code`,
-                type: 'GET',
-                success: function(response) {
-                    $('#qrCodeContainer').html(`
-                        <img src="${response.qr_code_url}" alt="QR Code" class="img-fluid">
-                        <p class="mt-3"><strong>QR Code:</strong> ${response.qr_code}</p>
-                    `);
-                },
-                error: function(xhr) {
-                    $('#qrCodeContainer').html(`
-                        <div class="alert alert-danger">
-                            <i class="bx bx-error"></i> Failed to load QR Code
-                        </div>
-                    `);
-                }
-            });
-        }
+        
 
         // Show image modal
         function showImageModal(imageSrc, eventName) {
@@ -447,46 +469,5 @@
         }
     </script>
 
-    <style>
-        /* Custom styles for better table layout */
-        #events-table th:first-child {
-            width: 80px;
-        }
-        
-        #events-table td:first-child {
-            text-align: center;
-        }
-        
-        .table-responsive {
-            overflow-x: auto;
-        }
-        
-        /* Hover effect for poster images */
-        td img:hover {
-            transform: scale(1.05);
-            transition: transform 0.2s ease-in-out;
-        }
-        
-        /* Modal image styling */
-        #modalImage {
-            max-height: 70vh;
-            object-fit: contain;
-        }
-
-        /* Badge styling for categories */
-        .badge {
-            font-size: 0.75em;
-        }
-
-        /* Dropdown styling */
-        .dropdown-item-text {
-            white-space: normal;
-            max-width: 250px;
-        }
-
-        /* Empty state styling */
-        .text-center.py-4 {
-            padding: 3rem 1rem !important;
-        }
-    </style>
+    
 @endsection

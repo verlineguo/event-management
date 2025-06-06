@@ -10,15 +10,16 @@ class MemberMainController extends Controller
 {
     private $apiUrl = 'http://localhost:5000/api';
 
-
     public function index()
     {
         try {
             $response = Http::withToken(session('jwt_token'))
                 ->get($this->apiUrl . '/member/events/featured');
+                
             if ($response->successful()) {
                 $events = $response->json();
-                $transformedEvents = $this->transformEventsForView($events);
+                $transformedEvents = $this->transformEventsForHomeView($events);
+                
                 return view('member.home', compact('transformedEvents'));
             }
 
@@ -27,102 +28,209 @@ class MemberMainController extends Controller
             return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
     }
-    
-    private function transformEventsForView($events)
+
+    public function events()
+    {
+        try {
+            $response = Http::withToken(session('jwt_token'))
+                ->get($this->apiUrl . '/member/events/featured');
+                
+            if ($response->successful()) {
+                $events = $response->json();
+                $transformedEvents = $this->transformEventsForHomeView($events);
+                $categoriesResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/category');
+
+            $categories = $categoriesResponse->successful() ? $categoriesResponse->json() : [];
+                
+                return view('member.events', compact('transformedEvents', 'categories'));
+            }
+
+            return back()->withErrors(['message' => 'Gagal mengambil data events']);
+        } catch (\Exception $e) {
+            return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+        }
+    }
+
+
+    // Improved transformation for home page
+    private function transformEventsForHomeView($events)
     {
         return collect($events)->map(function ($event) {
-            // Get event-level data
-            $totalRegistered = $event['registered_count'] ?? 0;
-            $maxParticipants = $event['max_participants'] ?? 0; // Kapasitas maksimum event
-            $availableSlots = max(0, $maxParticipants - $totalRegistered); // Sisa slot yang tersedia
-            $hasAvailableSessions = $event['has_available_sessions'] ?? false;
-            
-            // Process sessions with detailed quota info
-            $sessions = collect($event['sessions'] ?? [])->map(function ($session, $index) {
-                $sessionRegistered = $session['registered_count'] ?? 0;
-                $sessionMaxParticipants = $session['max_participants'] ?? 0; // Kapasitas maksimum session
-                $sessionAvailableSlots = max(0, $sessionMaxParticipants - $sessionRegistered); // Sisa slot session
+            // Extract session dates and fees
+            $sessions = $event['sessions'] ?? [];
+            $sessionDates = collect($sessions)
+                ->pluck('date')
+                ->filter()
+                ->map(function ($date) {
+                    try {
+                        return Carbon::parse($date)->toDateString();
+                    } catch (\Exception $e) {
+                        return null;
+                    }
+                })
+                ->filter()
+                ->sort();
                 
-                // Hitung persentase terisi (bukan tersedia)
-                $quotaPercentage = $sessionMaxParticipants > 0 
-                    ? round(($sessionRegistered / $sessionMaxParticipants) * 100) 
-                    : 0;
-                
-                return [
-                    'id' => $session['_id'] ?? $session['id'] ?? null,
-                    'session_order' => $session['session_order'] ?? ($index + 1),
-                    'title' => $session['title'] ?? "Session " . ($index + 1),
-                    'date' => $session['date'] ?? null,
-                    'start_time' => $session['start_time'] ?? null,
-                    'end_time' => $session['end_time'] ?? null,
-                    'location' => $session['location'] ?? 'Location TBA',
-                    'speaker' => $session['speaker'] ?? 'Speaker TBA',
-                    'description' => $session['description'] ?? '',
-                    'status' => $session['status'] ?? 'scheduled',
-                    // Quota information (DIPERBAIKI)
-                    'registered_count' => $sessionRegistered, // Jumlah yang sudah daftar
-                    'max_participants' => $sessionMaxParticipants, // Kapasitas maksimum
-                    'available_slots' => $sessionAvailableSlots, // Sisa slot yang masih bisa diisi
-                    'quota_percentage' => $quotaPercentage, // Persentase terisi
-                    'is_full' => $sessionAvailableSlots <= 0, // Penuh jika sisa slot = 0
-                    'is_almost_full' => $quotaPercentage >= 80, // Hampir penuh jika 80% terisi
-                ];
-            })->sortBy('session_order')->values();
-            
-            // Get date range from sessions
-            $dateRange = $this->getEventDateRange($sessions);
-            $primarySession = $sessions->first();
-            
-            // Determine overall event status (DIPERBAIKI)
-            $eventStatus = $event['status'] ?? 'open';
-            if ($eventStatus === 'open' && $availableSlots <= 0) {
-                $eventStatus = 'full'; // Event penuh jika tidak ada slot tersedia
-            }
-            
-            // Calculate session summary for display
-            $sessionSummary = $this->getSessionSummary($sessions);
-            
-            // Hitung persentase event terisi
-            $eventQuotaPercentage = $maxParticipants > 0 
-                ? round(($totalRegistered / $maxParticipants) * 100) 
-                : 0;
+            $sessionFees = collect($sessions)->pluck('session_fee')->filter();
             
             return [
                 'id' => $event['_id'],
-                'name' => $event['name'] ?? 'Event Name',
-                'description' => $event['description'] ?? '',
+                'name' => $event['name'],
+                'description' => $event['description'],
                 'poster' => $this->getPosterUrl($event['poster'] ?? null),
-                'category' => isset($event['category_id']) && is_array($event['category_id'])
-                    ? ($event['category_id']['name'] ?? 'General')
-                    : 'General',
-                'registration_fee' => $event['registration_fee'] ?? 0,
                 
-                // Event quota information (DIPERBAIKI)
-                'max_participants' => $maxParticipants, // Kapasitas maksimum event
-                'available_slots' => $availableSlots, // Sisa slot event yang tersedia
-                'registered_count' => $totalRegistered, // Total yang sudah daftar
-                'quota_percentage' => $eventQuotaPercentage, // Persentase event terisi
-                'is_full' => $availableSlots <= 0, // Event penuh
-                'is_almost_full' => $eventQuotaPercentage >= 80, // Event hampir penuh
+                // Fix category extraction
+                'category' => $this->extractCategory($event),
+                'status' => $event['status'] ?? 'open',
                 
-                'status' => $eventStatus,
-                'has_available_sessions' => $hasAvailableSessions,
-                'created_at' => $event['createdAt'] ?? $event['created_at'] ?? now(),
+                // Date info from sessions
+                'display_date' => $this->getDisplayDateFromSessions($sessionDates),
+                'date_range' => $this->getDateRangeFromSessions($sessionDates),
                 
-                // Session information
-                'sessions_count' => $sessions->count(),
-                'sessions' => $sessions->toArray(),
-                'primary_session' => $primarySession,
-                'session_summary' => $sessionSummary,
+                // Session info
+                'sessions_count' => $event['sessions_count'] ?? count($sessions),
+                'has_available_sessions' => $event['has_available_sessions'] ?? true,
                 
-                // Display data (from primary session or default)
-                'display_date' => $primarySession['date'] ?? now()->addDays(7)->format('Y-m-d'),
-                'display_time' => $this->formatSessionTime($primarySession),
-                'display_location' => $primarySession['location'] ?? 'Location TBA',
-                'display_speaker' => $primarySession['speaker'] ?? 'Speaker TBA',
-                'date_range' => $dateRange,
+                // Calculate minimum fee
+                'min_fee' => $sessionFees->min() ?? 0,
+                'max_fee' => $sessionFees->max() ?? 0,
+                'is_free' => $sessionFees->min() == 0,
+                
+                // Enhanced availability info
+                'availability_status' => $this->getAvailabilityStatus($event),
+                'registered_count' => $event['registered_count'] ?? 0,
+                'max_participants' => $event['max_participants'] ?? 0,
+                'quota_percentage' => $event['quota_percentage'] ?? 0,
+                
+                // Additional useful info for home page
+                'is_featured' => true, // since this comes from featured endpoint
+                'speaker_info' => $this->getMainSpeakerInfo($sessions),
+                'location_info' => $this->getMainLocationInfo($sessions),
+                'next_session' => $this->getNextSession($sessions),
             ];
-        })->take(6)->toArray();
+        })->toArray();
+    }
+
+    private function extractCategory($event)
+    {
+        // Handle both string and object category
+        if (isset($event['category_id']) && is_array($event['category_id'])) {
+            return $event['category_id']['name'] ?? 'General';
+        }
+        
+        if (isset($event['category'])) {
+            return is_string($event['category']) ? $event['category'] : 'General';
+        }
+        
+        return 'General';
+    }
+
+    private function getDisplayDateFromSessions($sessionDates)
+    {
+        if ($sessionDates->isEmpty()) {
+            return now()->toDateString();
+        }
+        
+        try {
+            return Carbon::parse($sessionDates->first())->toDateString();
+        } catch (\Exception $e) {
+            return now()->toDateString();
+        }
+    }
+
+    private function getDateRangeFromSessions($sessionDates)
+    {
+        if ($sessionDates->isEmpty()) {
+            return 'Date TBA';
+        }
+
+        try {
+            $firstDate = $sessionDates->first();
+            $lastDate = $sessionDates->last();
+
+            if ($sessionDates->count() === 1) {
+                return Carbon::parse($firstDate)->format('M j, Y');
+            }
+
+            $first = Carbon::parse($firstDate);
+            $last = Carbon::parse($lastDate);
+
+            // Same month and year
+            if ($first->format('Y-m') === $last->format('Y-m')) {
+                return $first->format('M j') . ' - ' . $last->format('j, Y');
+            }
+
+            // Different months
+            if ($first->year === $last->year) {
+                return $first->format('M j') . ' - ' . $last->format('M j, Y');
+            }
+
+            // Different years
+            return $first->format('M j, Y') . ' - ' . $last->format('M j, Y');
+        } catch (\Exception $e) {
+            return 'Date TBA';
+        }
+    }
+
+    private function getMainSpeakerInfo($sessions)
+    {
+        $speakers = collect($sessions)->pluck('speaker')->filter()->unique();
+        
+        if ($speakers->isEmpty()) {
+            return null;
+        }
+        
+        if ($speakers->count() === 1) {
+            return $speakers->first();
+        }
+        
+        return $speakers->first() . ' +' . ($speakers->count() - 1) . ' more';
+    }
+
+    private function getMainLocationInfo($sessions)
+    {
+        $locations = collect($sessions)->pluck('location')->filter()->unique();
+        
+        if ($locations->isEmpty()) {
+            return 'Location TBA';
+        }
+        
+        if ($locations->count() === 1) {
+            return $locations->first();
+        }
+        
+        return $locations->first() . ' +' . ($locations->count() - 1) . ' venues';
+    }
+
+    private function getNextSession($sessions)
+    {
+        $now = now();
+        $upcomingSessions = collect($sessions)
+            ->filter(function ($session) use ($now) {
+                try {
+                    // Parse date from ISO format and combine with time
+                    $sessionDate = Carbon::parse($session['date'])->format('Y-m-d');
+                    $sessionDateTime = Carbon::createFromFormat('Y-m-d H:i', $sessionDate . ' ' . $session['start_time']);
+                    return $sessionDateTime->isFuture();
+                } catch (\Exception $e) {
+                    // If parsing fails, assume it's upcoming
+                    return true;
+                }
+            })
+            ->sortBy('date')
+            ->first();
+            
+        if (!$upcomingSessions) {
+            return null;
+        }
+        
+        return [
+            'title' => $upcomingSessions['title'],
+            'date' => $upcomingSessions['date'],
+            'time' => $upcomingSessions['start_time'] . ' - ' . $upcomingSessions['end_time'],
+            'location' => $upcomingSessions['location'],
+            'speaker' => $upcomingSessions['speaker'],
+        ];
     }
 
     private function getPosterUrl($poster)
@@ -131,117 +239,47 @@ class MemberMainController extends Controller
             return asset('images/default-event.jpg');
         }
         
-        // Check if it's already a full URL
+        // If it's already a full URL
         if (str_starts_with($poster, 'http')) {
             return $poster;
         }
         
-        // Check if file exists in storage
+        // Try storage path first
         if (file_exists(storage_path('app/public/' . $poster))) {
             return asset('storage/' . $poster);
         }
         
-        // Check if file exists in public directory
+        // Try public path
         if (file_exists(public_path($poster))) {
             return asset($poster);
         }
         
-        // Fallback to default image
+        // Default fallback
         return asset('images/default-event.jpg');
     }
 
-    private function getSessionSummary($sessions)
+    private function getAvailabilityStatus($event)
     {
-        if ($sessions->isEmpty()) {
-            return ['total' => 0, 'available' => 0, 'full' => 0, 'almost_full' => 0];
+        // Check if event has available sessions
+        if (!($event['has_available_sessions'] ?? true)) {
+            return 'full';
         }
 
-        return [
-            'total' => $sessions->count(),
-            'available' => $sessions->where('available_slots', '>', 0)->count(),
-            'full' => $sessions->where('is_full', true)->count(),
-            'almost_full' => $sessions->where('is_almost_full', true)->where('is_full', false)->count(),
-        ];
-    }
-
-    private function getEventDateRange($sessions)
-    {
-        if ($sessions->isEmpty()) {
-            return 'Date TBA';
+        // Check session count
+        $sessionsCount = $event['sessions_count'] ?? 0;
+        if ($sessionsCount === 0) {
+            return 'no_sessions';
         }
 
-        $dates = $sessions->pluck('date')->filter()->sort();
-        
-        if ($dates->count() === 1) {
-            return Carbon::parse($dates->first())->format('M j, Y');
-        }
-        
-        if ($dates->count() > 1) {
-            $firstDate = Carbon::parse($dates->first());
-            $lastDate = Carbon::parse($dates->last());
-            
-            if ($firstDate->format('Y') === $lastDate->format('Y')) {
-                if ($firstDate->format('m') === $lastDate->format('m')) {
-                    return $firstDate->format('M j') . ' - ' . $lastDate->format('j, Y');
-                } else {
-                    return $firstDate->format('M j') . ' - ' . $lastDate->format('M j, Y');
-                }
-            } else {
-                return $firstDate->format('M j, Y') . ' - ' . $lastDate->format('M j, Y');
-            }
+        // Check quota percentage
+        $quotaPercentage = $event['quota_percentage'] ?? 0;
+        if ($quotaPercentage >= 100) {
+            return 'full';
+        } elseif ($quotaPercentage >= 80) {
+            return 'almost_full';
         }
 
-        return 'Date TBA';
-    }
-
-    private function formatSessionTime($session)
-    {
-        if (!$session || !isset($session['start_time'])) {
-            return 'Time TBA';
-        }
-
-        $startTime = $session['start_time'];
-        $endTime = $session['end_time'] ?? null;
-
-        if ($endTime) {
-            return $startTime . ' - ' . $endTime;
-        }
-
-        return $startTime;
-    }
-
-    public function events(Request $request)
-    {
-        try {
-            $query = $request->get('search');
-            $category = $request->get('category');
-            $status = $request->get('status', 'open');
-
-            $queryParams = [
-                'q' => $query,
-                'category' => $category,
-                'status' => $status
-            ];
-
-            $response = Http::withToken(session('jwt_token'))
-                ->get($this->apiUrl . '/member/events/search', array_filter($queryParams));
-
-            if ($response->successful()) {
-                $events = $response->json();
-                $transformedEvents = $this->transformEventsForView($events);
-                
-                // Get categories for filter
-                $categoriesResponse = Http::withToken(session('jwt_token'))
-                    ->get($this->apiUrl . '/categories');
-                $categories = $categoriesResponse->successful() ? $categoriesResponse->json() : [];
-                
-                return view('member.events.index', compact('transformedEvents', 'categories'));
-            }
-
-            return back()->withErrors(['message' => 'Gagal mengambil data events']);
-        } catch (\Exception $e) {
-            return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
-        }
+        return 'available';
     }
 
     public function showEvent($id)
@@ -273,22 +311,44 @@ class MemberMainController extends Controller
     }
 
 
-    public function downloadCertificate($id)
-    {
-        try {
-            $response = Http::withToken(session('jwt_token'))
-                ->get($this->apiUrl . '/certificates/' . $id . '/download');
-
-            if ($response->successful()) {
-                $certificate = $response->json();
-                return redirect($certificate['download_url']);
-            }
-
-            return back()->withErrors(['message' => 'Sertifikat tidak ditemukan']);
-        } catch (\Exception $e) {
-            return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
-        }
+    public function search(Request $request)
+{
+    $params = [];
+             
+    if ($request->filled('q')) {
+        $params['q'] = $request->q;
+    }
+             
+    if ($request->filled('category')) {
+        $params['category'] = $request->category;
+    }
+             
+    if ($request->filled('status')) {
+        $params['status'] = $request->status;
     }
 
-   
+
+    $response = Http::withToken(session('jwt_token'))
+        ->timeout(30)
+        ->get($this->apiUrl . '/events', $params);  
+
+
+    if ($response->successful()) {
+        $events = $response->json();
+        
+        $categoriesResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/category');
+
+        
+        $categories = $categoriesResponse->successful() ? $categoriesResponse->json() : [];
+        
+        if ($request->ajax()) {
+            return response()->json($events);
+        }
+                     
+        return view('committee.event.index', compact('events', 'categories'));
+    }
+
+    return back()->withErrors(['message' => 'Gagal melakukan pencarian events: ' . $response->body()]);
+}
+
 }
