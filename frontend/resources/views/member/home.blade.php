@@ -2,220 +2,9 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('guest/css/event.css') }}">
-    <style>
-        /* Additional CSS for enhanced event cards */
+        <link rel="stylesheet" href="{{ asset('guest/css/eventdetail.css') }}">
 
-        .featured-badge {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: linear-gradient(45deg, #ff6b35, #f7931e);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            z-index: 3;
-            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
-        }
-
-        .quota-warning {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #ff9800;
-            color: white;
-            padding: 5px 8px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            z-index: 3;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.05);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        .event-description {
-            color: #666;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            margin-bottom: 15px;
-        }
-
-        .event-fee-section {
-            margin: 15px 0;
-        }
-
-        .event-fee.free {
-            background: linear-gradient(45deg, #4caf50, #8bc34a);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
-        }
-
-        .event-fee:not(.free) {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .next-session-info {
-            background: #f8f9fa;
-            border-left: 4px solid #007bff;
-            padding: 12px;
-            margin: 15px 0;
-            border-radius: 0 8px 8px 0;
-        }
-
-        .next-session-info h4 {
-            margin: 0 0 8px 0;
-            color: #007bff;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .session-details {
-            font-size: 0.85rem;
-        }
-
-        .session-details strong {
-            color: #2c3e50;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .session-details small {
-            color: #666;
-            line-height: 1.4;
-        }
-
-        .availability-status {
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin: 10px 0;
-            text-align: center;
-        }
-
-        .availability-status.available {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .availability-status.almost-full {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .availability-status.full {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .availability-status.no-sessions {
-            background: #e2e3e5;
-            color: #383d41;
-            border: 1px solid #d6d8db;
-        }
-
-        .btn-register-event.urgent {
-            background: linear-gradient(45deg, #ff6b35, #f7931e);
-            animation: glow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes glow {
-            from {
-                box-shadow: 0 0 10px #ff6b35;
-            }
-
-            to {
-                box-shadow: 0 0 20px #f7931e, 0 0 30px #ff6b35;
-            }
-        }
-
-        .btn-register-event.full {
-            background: #6c757d;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .btn-register-event.full:hover {
-            background: #6c757d;
-            transform: none;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-
-            .featured-badge,
-            .quota-warning {
-                font-size: 0.7rem;
-                padding: 4px 8px;
-            }
-
-            .next-session-info {
-                font-size: 0.8rem;
-            }
-
-            .event-description {
-                font-size: 0.85rem;
-            }
-        }
-
-        /* Enhanced hover effects */
-        .event-card:hover .featured-badge {
-            transform: scale(1.1);
-            transition: transform 0.3s ease;
-        }
-
-        .event-card:hover .quota-warning {
-            animation-duration: 1s;
-        }
-
-        /* Statistics section (optional addition) */
-        .event-stats {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-top: 1px solid #eee;
-            margin-top: 10px;
-            font-size: 0.8rem;
-            color: #666;
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .stat-item i {
-            color: #007bff;
-        }
-    </style>
+    
 @endsection
 
 @section('content')
@@ -231,7 +20,7 @@
                         <br><span>Events</span>
                     </h1>
                     <a href="#events" class="btn-primary-custom">
-                        <i class="fas fa-calendar-check me-2"></i>View Events
+                        <i class="bx bx-calendar-check me-2"></i>View Events
                     </a>
                 </div>
             </div>
@@ -286,7 +75,6 @@
     <section id="events" class="ftco-section bg-light">
         <div class="container">
             <div class="section-title ftco-animate">
-                <span class="subheading">Discover</span>
                 <h2><span>Upcoming</span> Events</h2>
                 <p>Join our exciting events and expand your knowledge with industry experts</p>
             </div>
@@ -308,12 +96,7 @@
                                     {{ ucfirst($event['status']) }}
                                 </div>
 
-                                <!-- Featured Badge -->
-                                @if ($event['is_featured'])
-                                    <div class="featured-badge">
-                                        <i class="fas fa-star"></i> Featured
-                                    </div>
-                                @endif
+                          
 
                                 <!-- Date Badge -->
                                 <div class="event-date-badge">
@@ -326,14 +109,14 @@
                                 <!-- Sessions Count -->
                                 @if ($event['sessions_count'] > 1)
                                     <div class="sessions-badge">
-                                        <i class="fas fa-layer-group"></i> {{ $event['sessions_count'] }} Sessions
+                                        <i class="bx bx-layers"></i> {{ $event['sessions_count'] }} Sessions
                                     </div>
                                 @endif
 
                                 <!-- Quota Status -->
                                 @if ($event['quota_percentage'] >= 80 && $event['quota_percentage'] < 100)
                                     <div class="quota-warning">
-                                        <i class="fas fa-exclamation-triangle"></i> Almost Full
+                                        <i class="bx bx-alert-triangle"></i> Almost Full
                                     </div>
                                 @endif
                             </div>
@@ -349,18 +132,18 @@
                                 <!-- Enhanced Meta Information -->
                                 <div class="event-meta-section">
                                     <div class="event-meta">
-                                        <i class="fas fa-calendar-alt"></i>
+                                        <i class="bx bx-calendar-alt"></i>
                                         <span>{{ $event['date_range'] }}</span>
                                     </div>
 
                                     <div class="event-meta">
-                                        <i class="fas fa-tag"></i>
+                                        <i class="bx bx-categories"></i>
                                         <span>{{ $event['category'] }}</span>
                                     </div>
 
                                     @if ($event['sessions_count'] > 0)
                                         <div class="event-meta">
-                                            <i class="fas fa-layer-group"></i>
+                                            <i class="bx bx-layers"></i>
                                             <span>{{ $event['sessions_count'] }}
                                                 {{ $event['sessions_count'] > 1 ? 'Sessions' : 'Session' }}</span>
                                         </div>
@@ -368,14 +151,14 @@
 
                                     @if ($event['speaker_info'])
                                         <div class="event-meta">
-                                            <i class="fas fa-microphone"></i>
+                                            <i class="bx bx-microphone"></i>
                                             <span>{{ $event['speaker_info'] }}</span>
                                         </div>
                                     @endif
 
                                     @if ($event['location_info'])
                                         <div class="event-meta">
-                                            <i class="fas fa-map-marker-alt"></i>
+                                            <i class="bx bx-location-plus"></i>
                                             <span>{{ $event['location_info'] }}</span>
                                         </div>
                                     @endif
@@ -385,11 +168,11 @@
                                 <div class="event-fee-section">
                                     @if ($event['is_free'])
                                         <div class="event-fee free">
-                                            <i class="fas fa-gift"></i> FREE EVENT
+                                            <i class="bx bx-gift"></i> FREE EVENT
                                         </div>
                                     @else
                                         <div class="event-fee">
-                                            <i class="fas fa-money-bill-wave"></i>
+                                            <i class="bx bx-money"></i>
                                             @if ($event['min_fee'] == $event['max_fee'])
                                                 Rp {{ number_format($event['min_fee']) }}
                                             @else
@@ -407,7 +190,7 @@
                                         <div class="session-details">
                                             <strong>{{ $event['next_session']['title'] }}</strong><br>
                                             <small>
-                                                <i class="fas fa-clock"></i>
+                                                <i class="bx bx-timer"></i>
                                                 @php
                                                     try {
                                                         $sessionDate = \Carbon\Carbon::parse(
@@ -418,7 +201,7 @@
                                                     }
                                                 @endphp
                                                 {{ $sessionDate }} at {{ $event['next_session']['time'] }}<br>
-                                                <i class="fas fa-user"></i> {{ $event['next_session']['speaker'] }}
+                                                <i class="bx bx-user"></i> {{ $event['next_session']['speaker'] }}
                                             </small>
                                         </div>
                                     </div>
@@ -427,21 +210,21 @@
                                 <!-- Availability Status -->
                                 @if ($event['availability_status'] === 'full')
                                     <div class="availability-status full">
-                                        <i class="fas fa-users"></i> Event Full
+                                        <i class="bx bx-users"></i> Event Full
                                         ({{ $event['registered_count'] }}/{{ $event['max_participants'] }})
                                     </div>
                                 @elseif($event['availability_status'] === 'almost_full')
                                     <div class="availability-status almost-full">
-                                        <i class="fas fa-users"></i> Almost Full
+                                        <i class="bx bx-users"></i> Almost Full
                                         ({{ $event['registered_count'] }}/{{ $event['max_participants'] }})
                                     </div>
                                 @elseif($event['availability_status'] === 'no_sessions')
                                     <div class="availability-status no-sessions">
-                                        <i class="fas fa-calendar-times"></i> No Sessions Available
+                                        <i class="bx bx-calendar-check"></i> No Sessions Available
                                     </div>
                                 @else
                                     <div class="availability-status available">
-                                        <i class="fas fa-check-circle"></i>
+                                        <i class="bx bx-check-circle"></i>
                                         {{ $event['max_participants'] - $event['registered_count'] }} spots available
                                     </div>
                                 @endif
@@ -451,36 +234,36 @@
                                     @if ($event['status'] === 'open' && $event['availability_status'] === 'available')
                                         <a href="{{ route('member.events.show', $event['id']) }}"
                                             class="btn-view-details">
-                                            <i class="fas fa-eye"></i> View Details
+                                            <i class="bx bx-eye"></i> View Details
                                         </a>
                                         <a href="{{ route('member.events.register', $event['id']) }}"
                                             class="btn-register-event">
-                                            <i class="fas fa-ticket-alt"></i> Register Now
+                                            <i class="bx bx-tickets"></i> Register Now
                                         </a>
                                     @elseif($event['availability_status'] === 'almost_full')
                                         <a href="{{ route('member.events.show', $event['id']) }}"
                                             class="btn-view-details">
-                                            <i class="fas fa-eye"></i> View Details
+                                            <i class="bx bx-eye"></i> View Details
                                         </a>
                                         <a href="{{ route('member.events.register', $event['id']) }}"
                                             class="btn-register-event urgent">
-                                            <i class="fas fa-bolt"></i> Register Now!
+                                            <i class="bx bx-bolt"></i> Register Now!
                                         </a>
                                     @elseif($event['availability_status'] === 'full')
                                         <a href="{{ route('member.events.show', $event['id']) }}"
                                             class="btn-view-details">
-                                            <i class="fas fa-eye"></i> View Details
+                                            <i class="bx bx-eye"></i> View Details
                                         </a>
                                         <button class="btn-register-event full" disabled>
-                                            <i class="fas fa-users"></i> Event Full
+                                            <i class="bx bx-users"></i> Event Full
                                         </button>
                                     @else
                                         <a href="{{ route('member.events.show', $event['id']) }}"
                                             class="btn-view-details">
-                                            <i class="fas fa-eye"></i> View Details
+                                            <i class="bx bx-eye"></i> View Details
                                         </a>
                                         <button class="btn-register-event" disabled>
-                                            <i class="fas fa-times-circle"></i> {{ ucfirst($event['status']) }}
+                                            <i class="bx bx-timer"></i> {{ ucfirst($event['status']) }}
                                         </button>
                                     @endif
                                 </div>
@@ -490,11 +273,11 @@
                 </div>
             @else
                 <div class="no-events ftco-animate">
-                    <i class="fas fa-calendar-times"></i>
+                    <i class="bx bx-calendar-check"></i>
                     <h3>No Featured Events Available</h3>
                     <p>Stay tuned! Amazing events are coming soon.</p>
                     <a href="{{ route('member.events.index') }}" class="btn-view-all">
-                        <i class="fas fa-search"></i> Browse All Events
+                        <i class="bx bx-search"></i> Browse All Events
                     </a>
                 </div>
             @endif

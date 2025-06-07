@@ -58,7 +58,7 @@
         <div class="text-nowrap p-4">
             <form id="bulk-approve-form" action="{{ route('finance.payment.bulk-approve') }}" method="POST">
                 @csrf
-                <table id="payments-table" class="table table-responsive">
+                <table id="payments-table" class="table responsive">
                     <thead>
                         <tr>
                             <th>
@@ -66,7 +66,9 @@
                             </th>
                             <th>Participant</th>
                             <th>Event</th>
-                            <th>Amount</th>
+                            <th>Sessions</th>
+                            <th>Total Amount</th>
+                            <th>Paid Amount</th>
                             <th>Status</th>
                             <th>Submitted</th>
                             <th>Verified By</th>
@@ -92,13 +94,52 @@
                                 </td>
                                 <td>
                                     <div>
-                                        {{ $registration['event_id']['name'] }}<br>
-                                        <small class="text-muted">Fee: Rp {{ number_format($registration['event_id']['registration_fee']) }}</small>
+                                        <strong>{{ $registration['event_id']['name'] }}</strong><br>
+                                        <small class="text-muted">
+                                            {{ isset($registration['sessions']) ? count($registration['sessions']) : 0 }} sessions registered
+                                        </small>
                                     </div>
+                                </td>
+                                <td>
+                                    @if(isset($registration['sessions']) && count($registration['sessions']) > 0)
+                                        <div class="small">
+                                            @foreach($registration['sessions'] as $index => $session)
+                                                <div class="mb-1">
+                                                    <strong>{{ $session['title'] ?? 'Session ' . ($index + 1) }}</strong><br>
+                                                    <span class="text-muted">Fee: Rp {{ number_format($session['session_fee'] ?? 0) }}</span>
+                                                </div>
+                                                @if($index < count($registration['sessions']) - 1)
+                                                    <hr class="my-1">
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <span class="text-muted">No sessions</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @php
+                                        $totalAmount = 0;
+                                        if (isset($registration['sessions'])) {
+                                            foreach ($registration['sessions'] as $session) {
+                                                $totalAmount += $session['session_fee'] ?? 0;
+                                            }
+                                        }
+                                    @endphp
+                                    <strong>Rp {{ number_format($totalAmount) }}</strong>
                                 </td>
                                 <td>
                                     @if($registration['payment_amount'])
                                         <strong>Rp {{ number_format($registration['payment_amount']) }}</strong>
+                                        @php
+                                            $difference = $registration['payment_amount'] - $totalAmount;
+                                        @endphp
+                                        @if($difference != 0)
+                                            <br>
+                                            <small class="badge {{ $difference > 0 ? 'bg-success' : 'bg-danger' }}">
+                                                {{ $difference > 0 ? '+' : '' }}Rp {{ number_format(abs($difference)) }}
+                                            </small>
+                                        @endif
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif
@@ -159,7 +200,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center py-4">
+                                <td colspan="10" class="text-center py-4">
                                     <i class="bx bx-info-circle display-4 text-muted"></i>
                                     <p class="text-muted mt-2">No payment registrations found</p>
                                 </td>
@@ -208,11 +249,13 @@ $(document).ready(function() {
     $('#payments-table').DataTable({
         "pageLength": 10,
         "lengthMenu": [5, 10, 25, 50],
-        "order": [[6, "desc"]], // Sort by submitted date
+        "order": [[7, "desc"]], // Sort by submitted date
         "columnDefs": [{
             "orderable": false,
-            "targets": [0, 7] // Checkbox and Actions columns
-        }]
+            "targets": [0, 9] // Checkbox and Actions columns
+        }],
+        "responsive": true,
+                "scrollX": true,
     });
 
     // Select all functionality

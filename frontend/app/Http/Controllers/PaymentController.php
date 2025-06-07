@@ -29,6 +29,21 @@ class PaymentController extends Controller
         if ($response->successful()) {
             $registrations = $response->json();
             
+            // Calculate totals for each registration
+            $registrations = array_map(function($registration) {
+                $registration['total_session_fees'] = 0;
+                $registration['session_count'] = 0;
+                
+                if (isset($registration['sessions']) && is_array($registration['sessions'])) {
+                    $registration['session_count'] = count($registration['sessions']);
+                    foreach ($registration['sessions'] as $session) {
+                        $registration['total_session_fees'] += $session['session_fee'] ?? 0;
+                    }
+                }
+                
+                return $registration;
+            }, $registrations);
+            
             // Get events for filter dropdown
             $eventsResponse = Http::withToken(session('jwt_token'))
                 ->get($this->apiUrl . '/events');
@@ -44,9 +59,21 @@ class PaymentController extends Controller
     {
         $response = Http::withToken(session('jwt_token'))
             ->get($this->apiUrl . "/payments/{$id}");
-
+        
         if ($response->successful()) {
             $registration = $response->json();
+            
+            // Calculate session totals
+            $registration['total_session_fees'] = 0;
+            $registration['session_count'] = 0;
+            
+            if (isset($registration['sessions']) && is_array($registration['sessions'])) {
+                $registration['session_count'] = count($registration['sessions']);
+                foreach ($registration['sessions'] as $session) {
+                    $registration['total_session_fees'] += $session['session_fee'] ?? 0;
+                }
+            }
+
             return view('finance.payment.show', compact('registration'));
         }
 

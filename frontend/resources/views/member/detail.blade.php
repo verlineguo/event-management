@@ -9,9 +9,7 @@
     <div class="registration-container">
         <!-- Success Header -->
         <div class="header">
-            <div class="icon">
-                <i class="bx bx-check"></i>
-            </div>
+           
             <h1 class="title">Registrasi Berhasil!</h1>
             <p class="subtitle">
                 @if(($registration['payment_amount'] ?? 0) > 0)

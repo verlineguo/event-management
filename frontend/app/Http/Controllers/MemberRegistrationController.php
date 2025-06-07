@@ -11,13 +11,9 @@ class MemberRegistrationController extends Controller
 {
     private $apiUrl = 'http://localhost:5000/api';
 
-    /**
-     * Show event registration form (Step 1 - Select Sessions)
-     */
     public function registerEvent($id)
     {
         try {
-            // Get event detail with sessions
             $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/member/events/' . $id);
             if (!$response->successful()) {
                 return back()->withErrors(['message' => 'Event tidak ditemukan']);
@@ -25,24 +21,19 @@ class MemberRegistrationController extends Controller
 
             $event = $response->json();
 
-            // Check if user already registered
             $registrationResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/check/' . $id);
             if ($registrationResponse->successful() && $registrationResponse->json()) {
                 return redirect()->route('member.events.show', $id)->with('info', 'Anda sudah terdaftar untuk event ini');
             }
 
-
-            // Format date range and location
             $this->formatEventDisplay($event);
 
-            // Get existing draft if any
             $draft = null;
             $draftResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/draft/' . $id);
 
             if ($draftResponse->successful()) {
                 $draftData = $draftResponse->json();
 
-                // Format draft data untuk JavaScript
                 if ($draftData && isset($draftData['selected_sessions'])) {
                     $draft = [
                         'selected_sessions' => $draftData['selected_sessions'],
@@ -56,9 +47,7 @@ class MemberRegistrationController extends Controller
         }
     }
 
-    /**
-     * Store registration data and redirect to payment (Step 2)
-     */
+  
     public function storeRegistration(Request $request, $id)
     {
         try {
@@ -67,16 +56,26 @@ class MemberRegistrationController extends Controller
                 'selected_sessions.*' => 'required|string',
             ]);
 
-            // Get event details for payment calculation
+            $registrationCheckResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/check/' . $id);
+            if ($registrationCheckResponse->successful() && $registrationCheckResponse->json()) {
+                return redirect()->route('member.events.show', $id)->with('info', 'Anda sudah terdaftar untuk event ini');
+            }
+
             $eventResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/member/events/' . $id);
             if (!$eventResponse->successful()) {
                 return back()->withErrors(['message' => 'Event tidak ditemukan']);
             }
             $event = $eventResponse->json();
-            // Calculate payment amount
-            $paymentAmount = $event['registration_fee'] ?? 0;
 
-            // Store registration data in session for payment step
+            $paymentAmount = 0;
+            if (isset($event['sessions'])) {
+                foreach ($event['sessions'] as $session) {
+                    if (in_array($session['_id'], $request->selected_sessions)) {
+                        $paymentAmount += $session['session_fee'] ?? 0;
+                    }
+                }
+            }
+
             $registrationData = [
                 'event_id' => $id,
                 'selected_sessions' => $request->selected_sessions,
@@ -84,7 +83,7 @@ class MemberRegistrationController extends Controller
             ];
 
             session(['registration_data' => $registrationData]);
-            // Save as draft
+            
             $this->saveDraftData($registrationData);
 
             return redirect()->route('member.events.payment', $id);
@@ -95,12 +94,15 @@ class MemberRegistrationController extends Controller
         }
     }
 
-    /**
-     * Show payment form (Step 2)
-     */
+
     public function showPayment($id)
     {
         try {
+            $registrationCheckResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/check/' . $id);
+            if ($registrationCheckResponse->successful() && $registrationCheckResponse->json()) {
+                return redirect()->route('member.events.show', $id)->with('info', 'Anda sudah terdaftar untuk event ini');
+            }
+
             $registrationData = session('registration_data');
             if (!$registrationData) {
                 return redirect()
@@ -108,7 +110,6 @@ class MemberRegistrationController extends Controller
                     ->withErrors(['message' => 'Data registrasi tidak ditemukan']);
             }
 
-            // Get event details
             $eventResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/member/events/' . $id);
             if (!$eventResponse->successful()) {
                 return redirect()
@@ -118,7 +119,16 @@ class MemberRegistrationController extends Controller
             $event = $eventResponse->json();
             $this->formatEventDisplay($event);
 
-            return view('member.payment', compact('event'));
+            $selectedSessionsDetails = [];
+            if (isset($event['sessions']) && isset($registrationData['selected_sessions'])) {
+                foreach ($event['sessions'] as $session) {
+                    if (in_array($session['_id'], $registrationData['selected_sessions'])) {
+                        $selectedSessionsDetails[] = $session;
+                    }
+                }
+            }
+
+            return view('member.payment', compact('event', 'selectedSessionsDetails'));
         } catch (\Exception $e) {
             return redirect()
                 ->route('member.events.index')
@@ -132,6 +142,12 @@ class MemberRegistrationController extends Controller
     public function processPayment(Request $request, $id)
     {
         try {
+            // Check if user already registered first
+            $registrationCheckResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/check/' . $id);
+            if ($registrationCheckResponse->successful() && $registrationCheckResponse->json()) {
+                return redirect()->route('member.events.show', $id)->with('info', 'Anda sudah terdaftar untuk event ini');
+            }
+
             $registrationData = session('registration_data');
             if (!$registrationData) {
                 return redirect()
@@ -139,7 +155,7 @@ class MemberRegistrationController extends Controller
                     ->withErrors(['message' => 'Data registrasi tidak ditemukan']);
             }
 
-            // If event is free, skip payment proof
+            // If event has fee, require payment proof
             if (($registrationData['payment_amount'] ?? 0) > 0) {
                 $request->validate([
                     'payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
@@ -151,8 +167,6 @@ class MemberRegistrationController extends Controller
                     $registrationData['payment_proof_url'] = $paymentProofPath;
                 }
             }
-
-
 
             $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/registrations', $registrationData);
             if ($response->successful()) {
@@ -245,31 +259,24 @@ class MemberRegistrationController extends Controller
      * Show specific registration detail
      */
     public function showRegistration($id)
-{
-    try {
+    {
+        try {
+            $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/' . $id);
 
-        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/registrations/' . $id);
-        
+            if ($response->successful()) {
+                $registration = $response->json();
 
-        if ($response->successful()) {
-            $registration = $response->json();
-            
-
-            // Format registration data
-            if (isset($registration['event_id']) && is_array($registration['event_id']) && isset($registration['event_id']['date'])) {
+                // Format registration data
+                if (isset($registration['event_id']) && is_array($registration['event_id']) && isset($registration['event_id']['date'])) {
                     $registration['event_id']['formatted_date'] = Carbon::parse($registration['event_id']['date'])->format('d M Y');
-                
+                }
+
+                return view('member.registrations.show', compact('registration'));
             }
-            
-            return view('member.registrations.show', compact('registration'));
+        } catch (\Exception $e) {
+            return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
         }
-        
-  
-        
-    } catch (\Exception $e) {
-        return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
     }
-}
 
     /**
      * Show QR codes for confirmed registration
@@ -284,7 +291,7 @@ class MemberRegistrationController extends Controller
                     ->route('member.myRegistrations.index')
                     ->withErrors(['message' => 'QR Code tidak ditemukan atau belum tersedia']);
             }
-            
+
             $qrData = $response->json();
             return view('member.registrations.qr-codes', compact('qrData'));
         } catch (\Exception $e) {
@@ -294,7 +301,6 @@ class MemberRegistrationController extends Controller
         }
     }
 
-   
     public function saveDraftRegistration(Request $request, $id)
     {
         try {
@@ -303,10 +309,31 @@ class MemberRegistrationController extends Controller
                 'selected_sessions.*' => 'required|string',
             ]);
 
+            // Get event details to calculate payment
+            $eventResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/member/events/' . $id);
+            if (!$eventResponse->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Event tidak ditemukan',
+                ], 404);
+            }
+
+            $event = $eventResponse->json();
+            
+            // Calculate payment amount based on selected sessions
+            $paymentAmount = 0;
+            if (isset($event['sessions'])) {
+                foreach ($event['sessions'] as $session) {
+                    if (in_array($session['_id'], $request->selected_sessions)) {
+                        $paymentAmount += $session['session_fee'] ?? 0;
+                    }
+                }
+            }
+
             $draftData = [
                 'event_id' => $id,
                 'selected_sessions' => $request->selected_sessions,
-                'payment_amount' => $request->payment_amount,
+                'payment_amount' => $paymentAmount,
             ];
 
             $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/registrations/draft', $draftData);
@@ -336,7 +363,6 @@ class MemberRegistrationController extends Controller
         }
     }
 
-    
     public function getDraft($id)
     {
         try {
@@ -350,7 +376,6 @@ class MemberRegistrationController extends Controller
             return response()->json(null);
         }
     }
-
 
     public function deleteDraft($id)
     {
@@ -460,7 +485,6 @@ class MemberRegistrationController extends Controller
         try {
             $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/registrations/draft', $registrationData);
 
-            // Tambahkan ini untuk lihat apakah berhasil
             if ($response->successful()) {
                 logger('Draft berhasil disimpan');
             } else {

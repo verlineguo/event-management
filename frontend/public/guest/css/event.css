@@ -447,15 +447,7 @@
     margin-bottom: 50px;
 }
 
-.section-title .subheading {
-    color: #6b76ff;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-size: 13px;
-    margin-bottom: 8px;
-    display: block;
-}
+
 
 .section-title h2 {
     font-size: 42px;
@@ -758,7 +750,6 @@
     border-radius: 8px;
     padding: 15px;
     margin-bottom: 10px;
-    border-left: 4px solid #6b76ff;
 }
 
 .session-title {
@@ -801,7 +792,6 @@
     justify-content: space-between;
     margin-bottom: 10px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #dee2e6;
 }
 
 .summary-row:last-child {
@@ -1561,7 +1551,6 @@
         border-radius: 8px;
         padding: 15px;
         margin-bottom: 10px;
-        border-left: 4px solid #6b76ff;
     }
 
     .session-title {
