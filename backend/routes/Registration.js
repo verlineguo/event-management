@@ -4,8 +4,9 @@ const registrationController = require('../controllers/registrationController');
 const authenticateToken = require('../middleware/auth');
 
 router.get('/check/:id', authenticateToken, registrationController.checkRegistration); // Get all registrations
+
 // Get user's registrations
-router.get('/', authenticateToken, registrationController.getMyRegistrations);
+router.get('/my-registrations', authenticateToken, registrationController.getMyRegistrations);
 
 // Get single registration detail
 router.get('/:id',authenticateToken, registrationController.getRegistration);

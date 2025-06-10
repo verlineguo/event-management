@@ -25,7 +25,6 @@ exports.getFeaturedEvents = async (req, res) => {
               status: { $in: ['registered', 'completed'] }
             });
 
-            // max_participants di session = kuota tersedia (bukan total kapasitas)
             const availableSlots = session.max_participants || 0;
             const isAvailable = availableSlots > 0;
 
@@ -222,5 +221,38 @@ exports.getEventDetail = async (req, res) => {
     
   } catch (err) {
     res.status(500).json({ message: 'Terjadi kesalahan: ' + err.message });
+  }
+};
+
+
+
+exports.getEventRegistration = async (req, res) => {
+  try {
+    const { id } = req.params; // event_id
+    const userId = req.user._id;
+
+    const registration = await Registration.findOne({
+      event_id: id,
+      user_id: userId,
+      registration_status: { $in: ['registered', 'confirmed', 'pending', 'draft'] }
+    })
+    .populate('event_id', 'name description max_participants')
+    .populate('user_id', 'name email');
+
+    if (!registration) {
+      return res.json(null);
+    }
+
+    // Get session registration details
+    const sessionRegistrations = await SessionRegistration.find({
+      registration_id: registration._id
+    }).populate('session_id', 'title date start_time end_time location speaker session_fee');
+
+    res.json({
+      ...registration.toObject(),
+      session_registrations: sessionRegistrations
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

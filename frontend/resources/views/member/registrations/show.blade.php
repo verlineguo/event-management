@@ -2,19 +2,17 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('guest/css/event.css') }}">
+    <link rel="stylesheet" href="{{ asset('guest/css/eventdetail.css') }}">
     
 @endsection
 
 @section('content')
     <div class="registration-container">
-        <!-- Header -->
-        <div class="header">
-           
-            <h1 class="title">Detail Registrasi</h1>
-            <p class="subtitle">
-                Berikut adalah detail lengkap registrasi Anda untuk event ini
-            </p>
-        </div>
+        <!-- Success Header -->
+            <div class="section-title ftco-animate">
+                <h2><span>Registration</span> Details</h2>
+                <p>Here are the full details of your registration for this event.</p>
+            </div>
 
         <!-- Registration Details -->
         <div class="registration-details">

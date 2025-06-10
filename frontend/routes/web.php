@@ -13,7 +13,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login');
+Route::redirect('/', '/guest/home');
 
 Route::controller(AuthController::class)->group(function () {
     // Show forms
@@ -107,48 +107,24 @@ Route::prefix('member')
             Route::get('{id}/payment', 'showPayment')->name('member.events.payment');
             Route::post('{id}/payment', 'processPayment')->name('member.events.process-payment');
             Route::get('{id}/success/{registration_id}', 'registrationSuccess')->name('member.events.registration-success');
-
             Route::get('/registrations', 'myRegistrations')->name('member.myRegistrations.index');
-            Route::get('/registrations/{id}', 'showRegistration')->name('member.myRegistrations.show');
             Route::get('/registrations/{id}/qr-codes', 'showQRCodes')->name('member.myRegistrations.qr-codes');
             Route::patch('/registrations/{id}/cancel', 'cancelRegistration')->name('member.myRegistrations.cancel');
             Route::get('/registrations/{id}/payment-proof', 'downloadPaymentProof')->name('member.myRegistrations.payment-proof');
             Route::post('/registration-draft/{id}', 'saveDraftRegistration')->name('member.registration-draft.save');
             Route::get('/registration-draft/{id}', 'getDraft')->name('member.registration-draft.get');
             Route::delete('/registration-draft/{id}', 'deleteDraft')->name('member.registration-draft.delete');
+                   Route::get('/registrations/{id}', 'showRegistration')->name('member.myRegistrations.show');
+
         });
     });
-
-//     Route::middleware(['auth:web', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-//     Route::prefix('registrations')->name('registrations.')->group(function () {
-//         // List all registrations
-//         Route::get('/', [AdminRegistrationController::class, 'index'])
-//             ->name('index');
-
-//         // Show registration detail
-//         Route::get('{id}', [AdminRegistrationController::class, 'show'])
-//             ->name('show');
-
-//         // Confirm payment
-//         Route::patch('{id}/confirm', [AdminRegistrationController::class, 'confirmPayment'])
-//             ->name('confirm');
-
-//         // Reject payment
-//         Route::patch('{id}/reject', [AdminRegistrationController::class, 'rejectPayment'])
-//             ->name('reject');
-
-//         // Scan QR Code
-//         Route::post('scan-qr', [AdminRegistrationController::class, 'scanQRCode'])
-//             ->name('scan-qr');
-//     });
-// });
 
 Route::prefix('guest')->group(function () {
     Route::controller(GuestMainController::class)->group(function () {
         Route::get('/home', 'index')->name('guest.home');
     });
-    Route::controller(GuestMainController::class)->group(function () {
-        Route::get('/event', 'about')->name('guest.events');
+    Route::controller(MemberMainController::class)->group(function () {
+        Route::get('/event', 'events')->name('guest.events');
     });
 });
 

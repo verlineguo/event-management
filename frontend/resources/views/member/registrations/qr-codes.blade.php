@@ -2,19 +2,17 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('guest/css/event.css') }}">
+    <link rel="stylesheet" href="{{ asset('guest/css/eventdetail.css') }}">
   
 @endsection
 
 @section('content')
     <div class="registration-container">
-        <!-- QR Header -->
-        <div class="header">
-            <h1 class="title">
-                <i class="bx bx-qr"></i>
-                QR Code Check-in
-            </h1>
-            <p class="subtitle">Tunjukkan QR code ini saat check-in di setiap sesi event</p>
-        </div>
+     
+        <div class="section-title ftco-animate">
+                <h2><span>QR Code</span> Check-in</h2>
+                <p>Show this QR code at check-in for each event session</p>
+            </div>
 
         <!-- Event Information -->
         <div class="registration-details">
@@ -85,7 +83,7 @@
                                     <span>{{ isset($qrCode['session']['date']) ? \Carbon\Carbon::parse($qrCode['session']['date'])->format('d M Y') : 'Date' }}</span>
                                 </div>
                                 <div class="session-detail">
-                                    <i class="bx bx-time"></i>
+                                    <i class="bx bx-timer"></i>
                                     <span>{{ $qrCode['session']['start_time'] ?? 'Start' }} - {{ $qrCode['session']['end_time'] ?? 'End' }}</span>
                                 </div>
                                 <div class="session-detail">

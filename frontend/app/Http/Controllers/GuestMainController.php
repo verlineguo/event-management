@@ -22,15 +22,5 @@ class GuestMainController extends Controller
         return back()->withErrors(['message' => 'Gagal mengambil data events']);
     }
 
-    public function about()
-    {
-        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/events');
-
-        if ($response->successful()) {
-            $events = $response->json();
-            return view('guest.events', compact('events'));
-        }
-
-        return back()->withErrors(['message' => 'Gagal mengambil data events']);
-    }
+    
 }

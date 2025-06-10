@@ -235,7 +235,6 @@ class EventController extends Controller
         }
     }
 
-    // New methods to match backend functionality
 
     public function updateStatus(Request $request, $id)
     {
@@ -278,12 +277,9 @@ class EventController extends Controller
             $params['status'] = $request->status;
         }
 
-        Log::info('Search params:', $params);
-
-        // Ubah endpoint dari /events/search menjadi /events
         $response = Http::withToken(session('jwt_token'))
             ->timeout(30)
-            ->get($this->apiUrl . '/events', $params); // ✅ Hapus /search
+            ->get($this->apiUrl . '/events', $params);
 
         Log::info('API Response Status:', ['status' => $response->status()]);
 

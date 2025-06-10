@@ -251,7 +251,8 @@ exports.getQRCodes = async (req, res) => {
       _id: id,
       user_id: userId,
       registration_status: 'confirmed'
-    }).populate('event_id', 'name date location');
+    }).populate('event_id', 'name date location')
+    .populate('user_id', 'name email');;
 
     if (!registration) {
       return res.status(404).json({ 
@@ -261,7 +262,7 @@ exports.getQRCodes = async (req, res) => {
 
     const sessionRegistrations = await SessionRegistration.find({
       registration_id: registration._id
-    }).populate('session_id', 'title date start_time end_time location');
+    }).populate('session_id', 'title date start_time end_time location speaker');
 
     const qrCodes = [];
     for (const sessionReg of sessionRegistrations) {
