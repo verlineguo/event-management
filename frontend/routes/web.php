@@ -8,6 +8,8 @@ use App\Http\Controllers\FinanceMainController;
 use App\Http\Controllers\GuestMainController;
 use App\Http\Controllers\MemberMainController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProfileController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
@@ -51,12 +53,38 @@ Route::prefix('finance')->middleware(['auth.jwt', 'role:finance'])->group(functi
 
 
 
+<<<<<<< Updated upstream
 });
 
 
 Route::prefix('committee')->middleware(['auth.jwt', 'role:committee'])->group(function () {
     Route::controller(CommitteeMainController::class)->group(function() {
         Route::get('/dashboard', 'index')->name('committee.dashboard');
+=======
+        Route::controller(MemberRegistrationController::class)->group(function () {
+            Route::get('/events/{id}/register', 'registerEvent')->name('member.events.register');
+            Route::post('/events/{id}/register', 'storeRegistration')->name('member.events.store-registration');
+            Route::get('{id}/payment', 'showPayment')->name('member.events.payment');
+            Route::post('{id}/payment', 'processPayment')->name('member.events.process-payment');
+            Route::get('{id}/success/{registration_id}', 'registrationSuccess')->name('member.events.registration-success');
+            Route::get('/registrations', 'myRegistrations')->name('member.myRegistrations.index');
+            Route::get('/registrations/{id}/qr-codes', 'showQRCodes')->name('member.myRegistrations.qr-codes');
+            Route::patch('/registrations/{id}/cancel', 'cancelRegistration')->name('member.myRegistrations.cancel');
+            Route::get('/registrations/{id}/payment-proof', 'downloadPaymentProof')->name('member.myRegistrations.payment-proof');
+            Route::post('/registration-draft/{id}', 'saveDraftRegistration')->name('member.registration-draft.save');
+            Route::get('/registration-draft/{id}', 'getDraft')->name('member.registration-draft.get');
+            Route::delete('/registration-draft/{id}', 'deleteDraft')->name('member.registration-draft.delete');
+            Route::get('/registrations/{id}', 'showRegistration')->name('member.myRegistrations.show');
+        });
+
+        Route::middleware('auth')->group(function () {
+        Route::get('/profile', [ProfileController::class, 'showMyProfile'])->name('profile.show.mine');
+        Route::get('/profile/{id}', [ProfileController::class, 'show'])->name('profile.show');
+
+        Route::get('/settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/settings/profile', [ProfileController::class, 'update'])->name('profile.update');
+});
+>>>>>>> Stashed changes
     });
 
     Route::controller(EventController::class)->group( function() {
