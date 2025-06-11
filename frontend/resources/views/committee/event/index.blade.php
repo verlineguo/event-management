@@ -5,7 +5,7 @@
         <!-- Header with filters -->
         <div class="d-flex justify-content-between mb-3">
             <h5 class="fw-bold mb-4">
-                Event Management 
+                Event Management
             </h5>
             <a href="{{ route('committee.event.create') }}" class="btn btn-primary">
                 <i class="bx bx-plus me-1"></i>Create Event
@@ -20,9 +20,8 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="search" class="form-label">Search Events</label>
-                                <input type="text" class="form-control" id="search" name="q" 
-                                       placeholder="Search by name or description..." 
-                                       value="{{ request('q') }}">
+                                <input type="text" class="form-control" id="search" name="q"
+                                    placeholder="Search by name or description..." value="{{ request('q') }}">
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -30,11 +29,12 @@
                                 <label for="category" class="form-label">Category</label>
                                 <select class="form-select" id="category" name="category">
                                     <option value="">All Categories</option>
-                                     @foreach($categories as $category)
-                                <option value="{{ $category['_id'] }}" {{ old('category_id') == $category['_id'] ? 'selected' : '' }}>
-                                    {{ $category['name']  }}
-                                </option>
-                            @endforeach
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category['_id'] }}"
+                                            {{ old('category_id') == $category['_id'] ? 'selected' : '' }}>
+                                            {{ $category['name'] }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -44,9 +44,12 @@
                                 <select class="form-select" id="status" name="status">
                                     <option value="">All Status</option>
                                     <option value="open" {{ request('status') == 'open' ? 'selected' : '' }}>Open</option>
-                                    <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
-                                    <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                                    <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed
+                                    </option>
+                                    <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>
+                                        Cancelled</option>
+                                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>
+                                        Completed</option>
                                 </select>
                             </div>
                         </div>
@@ -90,14 +93,13 @@
                         @foreach ($events as $event)
                             <tr>
                                 <td>
-                                    @if(isset($event['poster']) && !empty($event['poster']))
-                                        <img src="{{ asset('storage/' . $event['poster']) }}" 
-                                            alt="Event Poster" 
-                                            class="rounded" 
+                                    @if (isset($event['poster']) && !empty($event['poster']))
+                                        <img src="{{ asset('storage/' . $event['poster']) }}" alt="Event Poster"
+                                            class="rounded"
                                             style="width: 60px; height: 60px; object-fit: cover; cursor: pointer;"
                                             onclick="showImageModal('{{ asset('storage/' . $event['poster']) }}', '{{ $event['name'] }}')">
                                     @else
-                                        <div class="d-flex align-items-center justify-content-center bg-light rounded" 
+                                        <div class="d-flex align-items-center justify-content-center bg-light rounded"
                                             style="width: 60px; height: 60px;">
                                             <i class="bx bx-image text-muted" style="font-size: 24px;"></i>
                                         </div>
@@ -106,14 +108,16 @@
                                 <td>
                                     <div>
                                         <strong>{{ $event['name'] }}</strong>
-                                        @if(isset($event['description']) && !empty($event['description']))
-                                            <br><small class="text-muted">{{ Str::limit($event['description'], 50) }}</small>
+                                        @if (isset($event['description']) && !empty($event['description']))
+                                            <br><small
+                                                class="text-muted">{{ Str::limit($event['description'], 50) }}</small>
                                         @endif
                                     </div>
                                 </td>
                                 <td>
-                                    @if(isset($event['category_id']['name']))
-                                        <span class="badge" style="background-color: {{ $event['category_id']['color'] ?? '#6c757d' }}">
+                                    @if (isset($event['category_id']['name']))
+                                        <span class="badge"
+                                            style="background-color: {{ $event['category_id']['color'] ?? '#6c757d' }}">
                                             {{ $event['category_id']['name'] }}
                                         </span>
                                     @else
@@ -121,11 +125,10 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if(isset($event['sessions']) && count($event['sessions']) > 0)
-                                        <button class="btn btn-sm btn-outline-primary sessions-btn" 
-                                                data-event-id="{{ $event['_id'] }}" 
-                                                data-event-name="{{ $event['name'] }}"
-                                                data-sessions="{{ json_encode($event['sessions']) }}">
+                                    @if (isset($event['sessions']) && count($event['sessions']) > 0)
+                                        <button class="btn btn-sm btn-outline-primary sessions-btn"
+                                            data-event-id="{{ $event['_id'] }}" data-event-name="{{ $event['name'] }}"
+                                            data-sessions="{{ json_encode($event['sessions']) }}">
                                             <i class="bx bx-calendar me-1"></i>
                                             {{ count($event['sessions']) }} Session(s)
                                         </button>
@@ -134,17 +137,19 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if(isset($event['sessions']) && count($event['sessions']) > 0)
+                                    @if (isset($event['sessions']) && count($event['sessions']) > 0)
                                         @php
                                             $sessionFees = collect($event['sessions'])->pluck('session_fee')->filter();
                                             $minFee = $sessionFees->min();
                                             $maxFee = $sessionFees->max();
                                         @endphp
-                                        @if($sessionFees->count() > 0)
-                                            @if($minFee == $maxFee)
-                                                <span class="badge bg-info">Rp {{ number_format($minFee, 0, ',', '.') }}</span>
+                                        @if ($sessionFees->count() > 0)
+                                            @if ($minFee == $maxFee)
+                                                <span class="badge bg-info">Rp
+                                                    {{ number_format($minFee, 0, ',', '.') }}</span>
                                             @else
-                                                <span class="badge bg-info">Rp {{ number_format($minFee, 0, ',', '.') }} - {{ number_format($maxFee, 0, ',', '.') }}</span>
+                                                <span class="badge bg-info">Rp {{ number_format($minFee, 0, ',', '.') }} -
+                                                    {{ number_format($maxFee, 0, ',', '.') }}</span>
                                             @endif
                                         @else
                                             <span class="badge bg-success">Free</span>
@@ -154,57 +159,69 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if(isset($event['max_participants']) && $event['max_participants'] > 0)
+                                    @if (isset($event['max_participants']) && $event['max_participants'] > 0)
                                         {{ $event['max_participants'] }} people
                                     @else
                                         <span class="text-muted">Unlimited</span>
                                     @endif
                                 </td>
                                 <td>
-    <div class="d-flex align-items-center">
-        <span class="badge bg-{{ $event['status'] === 'open' ? 'success' : ($event['status'] === 'closed' ? 'danger' : ($event['status'] === 'cancelled' ? 'dark' : 'info')) }}">
-            {{ ucfirst($event['status']) }}
-        </span>
-        
-        <button class="btn btn-sm btn-outline-secondary ms-2" 
-                data-bs-toggle="modal" 
-                data-bs-target="#statusModal{{ $event['_id'] }}">
-            <i class="bx bx-edit"></i>
-        </button>
-    </div>
-    
-    <!-- Modal untuk update status -->
-    <div class="modal fade" id="statusModal{{ $event['_id'] }}" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title">Update Status</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form action="{{ route('committee.event.status.update', $event['_id']) }}" method="POST">
-                    @csrf @method('PATCH')
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label class="form-label">Select Status:</label>
-                            <select name="status" class="form-select" required>
-                                <option value="open" {{ $event['status'] === 'open' ? 'selected' : '' }}>Open</option>
-                                <option value="closed" {{ $event['status'] === 'closed' ? 'selected' : '' }}>Closed</option>
-                                <option value="cancelled" {{ $event['status'] === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                <option value="completed" {{ $event['status'] === 'completed' ? 'selected' : '' }}>Completed</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update Status</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</td>
+                                    <div class="d-flex align-items-center">
+                                        <span
+                                            class="badge bg-{{ $event['status'] === 'open' ? 'success' : ($event['status'] === 'closed' ? 'danger' : ($event['status'] === 'cancelled' ? 'dark' : 'info')) }}">
+                                            {{ ucfirst($event['status']) }}
+                                        </span>
+
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" data-bs-toggle="modal"
+                                            data-bs-target="#statusModal{{ $event['_id'] }}">
+                                            <i class="bx bx-edit"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Modal untuk update status -->
+                                    <div class="modal fade" id="statusModal{{ $event['_id'] }}" tabindex="-1">
+                                        <div class="modal-dialog modal-sm modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h6 class="modal-title">Update Status</h6>
+                                                    <button type="button" class="btn-close"
+                                                        data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form action="{{ route('committee.event.status.update', $event['_id']) }}"
+                                                    method="POST">
+                                                    @csrf @method('PATCH')
+                                                    <div class="modal-body">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Select Status:</label>
+                                                            <select name="status" class="form-select" required>
+                                                                <option value="open"
+                                                                    {{ $event['status'] === 'open' ? 'selected' : '' }}>
+                                                                    Open</option>
+                                                                <option value="closed"
+                                                                    {{ $event['status'] === 'closed' ? 'selected' : '' }}>
+                                                                    Closed</option>
+                                                                <option value="cancelled"
+                                                                    {{ $event['status'] === 'cancelled' ? 'selected' : '' }}>
+                                                                    Cancelled</option>
+                                                                <option value="completed"
+                                                                    {{ $event['status'] === 'completed' ? 'selected' : '' }}>
+                                                                    Completed</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-primary">Update
+                                                            Status</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
                                 <td>
-                                    @if(isset($event['createdAt']))
+                                    @if (isset($event['createdAt']))
                                         {{ \Carbon\Carbon::parse($event['createdAt'])->format('d M Y') }}
                                     @else
                                         <span class="text-muted">-</span>
@@ -212,33 +229,42 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        
+
+                                        <!-- Edit -->
+                                        <a href="{{ route('committee.event.participants', $event['_id']) }}"
+                                            class="btn btn-sm btn-success" title="Event Participants">
+                                            <i class="bx bx-user"></i>
+                                        </a>
+                                        <a href="{{ route('committee.event.scan-qr', $event['_id']) }}"
+                                            class="btn btn-sm btn-secondary" title="Event Participants">
+                                            <i class="bx bx-qr-scan"></i>
+                                        </a>
+
                                         <!-- Show -->
-                                        <a href="{{ route('committee.event.show', $event['_id']) }}" 
-                                           class="btn btn-sm btn-info" title="View Details">
+                                        <a href="{{ route('committee.event.show', $event['_id']) }}"
+                                            class="btn btn-sm btn-info" title="Scan QR">
                                             <i class="bx bx-show"></i>
                                         </a>
-                                        
+
                                         <!-- Edit -->
-                                        <a href="{{ route('committee.event.edit', $event['_id']) }}" 
-                                           class="btn btn-sm btn-warning" title="Edit Event">
+                                        <a href="{{ route('committee.event.edit', $event['_id']) }}"
+                                            class="btn btn-sm btn-warning" title="Edit Event">
                                             <i class="bx bx-edit"></i>
                                         </a>
-                                        
+
                                         <!-- Delete -->
-                                        <form action="{{ route('committee.event.destroy', $event['_id']) }}" method="POST"
-                                              style="display: inline-block" class="delete-form">
+                                        <form action="{{ route('committee.event.destroy', $event['_id']) }}"
+                                            method="POST" style="display: inline-block" class="delete-form">
                                             @csrf
                                             @method('DELETE')
                                             <button type="button" class="btn btn-sm btn-danger delete-btn"
-                                                    data-id="{{ $event['_id'] }}" title="Delete Event">
+                                                data-id="{{ $event['_id'] }}" title="Delete Event">
                                                 <i class="bx bx-trash"></i>
                                             </button>
                                         </form>
                                     </div>
                                 </td>
                             </tr>
-                        
                         @endforeach
                     </tbody>
                 </table>
@@ -298,7 +324,9 @@
                     "orderable": false,
                     "targets": [0, 8] // Poster and Actions columns
                 }],
-                "order": [[7, "desc"]], // Order by created date descending
+                "order": [
+                    [7, "desc"]
+                ], // Order by created date descending
                 "responsive": true,
                 "scrollX": true,
             });
@@ -321,12 +349,12 @@
                 showSessionsModal(eventName, sessions);
             });
 
-   
+
 
             // Delete confirmation
             $(document).on('click', '.delete-btn', function() {
                 const form = $(this).closest('form');
-                
+
                 Swal.fire({
                     title: 'Are you sure?',
                     text: "You won't be able to revert this!",
@@ -343,7 +371,7 @@
             });
 
             // Success/Error messages
-            @if(session('success'))
+            @if (session('success'))
                 Swal.fire({
                     title: 'Success!',
                     text: '{{ session('success') }}',
@@ -352,7 +380,7 @@
                 });
             @endif
 
-            @if(session('error'))
+            @if (session('error'))
                 Swal.fire({
                     title: 'Error!',
                     text: '{{ session('error') }}',
@@ -371,7 +399,7 @@
         // Show sessions modal
         function showSessionsModal(eventName, sessions) {
             $('#sessionsModalLabel').text(`${eventName} - Sessions`);
-            
+
             let sessionsHtml = '';
             if (sessions && sessions.length > 0) {
                 sessions.forEach((session, index) => {
@@ -380,9 +408,10 @@
                         month: 'short',
                         year: 'numeric'
                     });
-                    
-                    const sessionFee = session.session_fee ? `Rp ${new Intl.NumberFormat('id-ID').format(session.session_fee)}` : 'Free';
-                    
+
+                    const sessionFee = session.session_fee ?
+                        `Rp ${new Intl.NumberFormat('id-ID').format(session.session_fee)}` : 'Free';
+
                     sessionsHtml += `
                         <div class="card mb-3">
                             <div class="card-body">
@@ -419,9 +448,9 @@
                     </div>
                 `;
             }
-            
+
             $('#sessionsContainer').html(sessionsHtml);
-            
+
             const modal = new bootstrap.Modal(document.getElementById('sessionsModal'));
             modal.show();
         }
@@ -458,7 +487,7 @@
             });
         }
 
-        
+
 
         // Show image modal
         function showImageModal(imageSrc, eventName) {
@@ -468,6 +497,4 @@
             modal.show();
         }
     </script>
-
-    
 @endsection

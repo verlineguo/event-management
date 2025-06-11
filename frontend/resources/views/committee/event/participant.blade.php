@@ -6,15 +6,38 @@
         <div class="d-flex justify-content-between mb-3">
             <div>
                 <h5 class="fw-bold mb-1">Event Participants</h5>
-                <p class="text-muted mb-0">{{ $event['name'] }}</p>
+                <p class="text-muted mb-0">{{ $data['event']['name'] }}</p>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('committee.event.participants.scan', $event['_id']) }}" class="btn btn-success">
+                <a href="{{ route('committee.event.scan-qr', $data['event']['_id']) }}" class="btn btn-success">
                     <i class="bx bx-qr-scan me-1"></i>Scan QR Code
                 </a>
                 <a href="{{ route('committee.event.index') }}" class="btn btn-outline-secondary">
                     <i class="bx bx-arrow-back me-1"></i>Back to Events
                 </a>
+                
+                {{-- Session Selection Dropdown for Attendance --}}
+                @if(isset($data['event']['sessions']) && count($data['event']['sessions']) > 0)
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bx bx-list-check me-1"></i>View Attendance
+                        </button>
+                        <ul class="dropdown-menu">
+                            @foreach($data['event']['sessions'] as $session)
+                                <li>
+                                    <a class="dropdown-item" 
+                                       href="{{ route('committee.attendance.session', $session['_id']) }}">
+                                        {{ $session['title'] }}
+                                        <small class="text-muted d-block">
+                                            {{ \Carbon\Carbon::parse($session['date'])->format('d M Y') }} • 
+                                            {{ $session['start_time'] }}
+                                        </small>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -23,31 +46,80 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-8">
-                        <h6 class="card-title">{{ $event['name'] }}</h6>
-                        <p class="text-muted mb-2">{{ $event['description'] ?? 'No description' }}</p>
+                        <h6 class="card-title">{{ $data['event']['name'] }}</h6>
+                        <p class="text-muted mb-2">{{ $data['event']['description'] ?? 'No description' }}</p>
                         <div class="d-flex gap-3">
                             <small class="text-muted">
                                 <i class="bx bx-category me-1"></i>
-                                {{ $event['category_id']['name'] ?? 'No category' }}
+                                {{ $data['event']['category_id']['name'] ?? 'No category' }}
                             </small>
                             <small class="text-muted">
                                 <i class="bx bx-group me-1"></i>
-                                Max: {{ $event['max_participants'] ?? 'Unlimited' }} participants
+                                Max: {{ $data['event']['max_participants'] ?? 'Unlimited' }} participants
                             </small>
                             <small class="text-muted">
                                 <i class="bx bx-calendar me-1"></i>
-                                {{ count($event['sessions']) }} sessions
+                                {{ count($data['event']['sessions'] ?? []) }} sessions
                             </small>
                         </div>
                     </div>
                     <div class="col-md-4 text-end">
-                        <span class="badge bg-{{ $event['status'] === 'open' ? 'success' : ($event['status'] === 'closed' ? 'danger' : ($event['status'] === 'cancelled' ? 'dark' : 'info')) }} fs-6">
-                            {{ ucfirst($event['status']) }}
+                        <span
+                            class="badge bg-{{ $data['event']['status'] === 'open' ? 'success' : ($data['event']['status'] === 'closed' ? 'danger' : ($data['event']['status'] === 'cancelled' ? 'dark' : 'info')) }} fs-6">
+                            {{ ucfirst($data['event']['status']) }}
                         </span>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Sessions List (if any) -->
+        @if(isset($data['event']['sessions']) && count($data['event']['sessions']) > 0)
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Event Sessions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach($data['event']['sessions'] as $session)
+                            <div class="col-md-6 mb-3">
+                                <div class="card border">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="card-title mb-1">{{ $session['title'] }}</h6>
+                                                <p class="text-muted small mb-2">
+                                                    <i class="bx bx-calendar me-1"></i>
+                                                    {{ \Carbon\Carbon::parse($session['date'])->format('d M Y') }}
+                                                </p>
+                                                <p class="text-muted small mb-2">
+                                                    <i class="bx bx-time me-1"></i>
+                                                    {{ $session['start_time'] }} - {{ $session['end_time'] }}
+                                                </p>
+                                                <p class="text-muted small mb-0">
+                                                    <i class="bx bx-map me-1"></i>
+                                                    {{ $session['location'] }}
+                                                </p>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-{{ $session['status'] === 'completed' ? 'success' : ($session['status'] === 'ongoing' ? 'info' : ($session['status'] === 'cancelled' ? 'danger' : 'warning')) }}">
+                                                    {{ ucfirst($session['status']) }}
+                                                </span>
+                                                <br>
+                                                <a href="{{ route('committee.attendance.session', $session['_id']) }}" 
+                                                   class="btn btn-sm btn-primary mt-2">
+                                                    <i class="bx bx-list-check me-1"></i>Attendance
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Stats Cards -->
         <div class="row mb-4">
@@ -98,27 +170,36 @@
                             <label class="form-label">Payment Status</label>
                             <select class="form-select" name="payment_status" onchange="this.form.submit()">
                                 <option value="">All Payments</option>
-                                <option value="pending" {{ request('payment_status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                                <option value="approved" {{ request('payment_status') === 'approved' ? 'selected' : '' }}>Approved</option>
-                                <option value="rejected" {{ request('payment_status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                <option value="pending" {{ request('payment_status') === 'pending' ? 'selected' : '' }}>
+                                    Pending</option>
+                                <option value="approved" {{ request('payment_status') === 'approved' ? 'selected' : '' }}>
+                                    Approved</option>
+                                <option value="rejected" {{ request('payment_status') === 'rejected' ? 'selected' : '' }}>
+                                    Rejected</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Registration Status</label>
                             <select class="form-select" name="registration_status" onchange="this.form.submit()">
                                 <option value="">All Registrations</option>
-                                <option value="draft" {{ request('registration_status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                                <option value="registered" {{ request('registration_status') === 'registered' ? 'selected' : '' }}>Registered</option>
-                                <option value="confirmed" {{ request('registration_status') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                                <option value="cancelled" {{ request('registration_status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                <option value="draft" {{ request('registration_status') === 'draft' ? 'selected' : '' }}>
+                                    Draft</option>
+                                <option value="registered"
+                                    {{ request('registration_status') === 'registered' ? 'selected' : '' }}>Registered
+                                </option>
+                                <option value="confirmed"
+                                    {{ request('registration_status') === 'confirmed' ? 'selected' : '' }}>Confirmed
+                                </option>
+                                <option value="cancelled"
+                                    {{ request('registration_status') === 'cancelled' ? 'selected' : '' }}>Cancelled
+                                </option>
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Search Participant</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" name="search" 
-                                       placeholder="Name or email..." 
-                                       value="{{ request('search') }}">
+                                <input type="text" class="form-control" name="search" placeholder="Name or email..."
+                                    value="{{ request('search') }}">
                                 <button class="btn btn-primary" type="submit">
                                     <i class="bx bx-search"></i>
                                 </button>
@@ -127,7 +208,8 @@
                         <div class="col-md-2">
                             <label class="form-label">&nbsp;</label>
                             <div>
-                                <a href="{{ route('committee.event.participants', $event['_id']) }}" class="btn btn-outline-secondary">
+                                <a href="{{ route('committee.event.participants', $data['event']['_id']) }}"
+                                    class="btn btn-outline-secondary">
                                     <i class="bx bx-refresh"></i> Reset
                                 </a>
                             </div>
@@ -165,14 +247,16 @@
                                         <div>
                                             <strong>{{ $participant['user_id']['name'] }}</strong>
                                             <br><small class="text-muted">{{ $participant['user_id']['email'] }}</small>
-                                            @if(isset($participant['user_id']['phone']))
-                                                <br><small class="text-muted">{{ $participant['user_id']['phone'] }}</small>
+                                            @if (isset($participant['user_id']['phone']))
+                                                <br><small
+                                                    class="text-muted">{{ $participant['user_id']['phone'] }}</small>
                                             @endif
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-{{ $participant['registration_status'] === 'confirmed' ? 'success' : ($participant['registration_status'] === 'registered' ? 'info' : ($participant['registration_status'] === 'cancelled' ? 'danger' : 'warning')) }}">
+                                    <span
+                                        class="badge bg-{{ $participant['registration_status'] === 'confirmed' ? 'success' : ($participant['registration_status'] === 'registered' ? 'info' : ($participant['registration_status'] === 'cancelled' ? 'danger' : 'warning')) }}">
                                         {{ ucfirst($participant['registration_status']) }}
                                     </span>
                                     <br><small class="text-muted">
@@ -180,25 +264,27 @@
                                     </small>
                                 </td>
                                 <td>
-                                    <span class="badge bg-{{ $participant['payment_status'] === 'approved' ? 'success' : ($participant['payment_status'] === 'rejected' ? 'danger' : 'warning') }}">
+                                    <span
+                                        class="badge bg-{{ $participant['payment_status'] === 'approved' ? 'success' : ($participant['payment_status'] === 'rejected' ? 'danger' : 'warning') }}">
                                         {{ ucfirst($participant['payment_status']) }}
                                     </span>
-                                    @if($participant['payment_amount'])
-                                        <br><small class="text-muted">Rp {{ number_format($participant['payment_amount'], 0, ',', '.') }}</small>
+                                    @if ($participant['payment_amount'])
+                                        <br><small class="text-muted">Rp
+                                            {{ number_format($participant['payment_amount'], 0, ',', '.') }}</small>
                                     @endif
-                                    @if($participant['payment_proof_url'])
-                                        <br><a href="{{ asset('storage/' . $participant['payment_proof_url']) }}" 
-                                               target="_blank" class="text-primary">
+                                    @if ($participant['payment_proof_url'])
+                                        <br><a href="{{ asset('storage/' . $participant['payment_proof_url']) }}"
+                                            target="_blank" class="text-primary">
                                             <small><i class="bx bx-file me-1"></i>View Proof</small>
                                         </a>
                                     @endif
                                 </td>
                                 <td>
-                                    @if(isset($participant['session_registrations']) && count($participant['session_registrations']) > 0)
-                                        <button class="btn btn-sm btn-outline-info session-details-btn" 
-                                                data-participant-id="{{ $participant['_id'] }}"
-                                                data-participant-name="{{ $participant['user_id']['name'] }}"
-                                                data-sessions="{{ json_encode($participant['session_registrations']) }}">
+                                    @if (isset($participant['session_registrations']) && count($participant['session_registrations']) > 0)
+                                        <button class="btn btn-sm btn-outline-info session-details-btn"
+                                            data-participant-id="{{ $participant['_id'] }}"
+                                            data-participant-name="{{ $participant['user_id']['name'] }}"
+                                            data-sessions="{{ json_encode($participant['session_registrations']) }}">
                                             <i class="bx bx-calendar me-1"></i>
                                             {{ count($participant['session_registrations']) }} Sessions
                                         </button>
@@ -210,19 +296,22 @@
                                     @php
                                         $attendedCount = 0;
                                         $totalSessions = count($participant['session_registrations'] ?? []);
-                                        
-                                        foreach($participant['session_registrations'] ?? [] as $sessionReg) {
-                                            if(isset($sessionReg['attendance']) && $sessionReg['attendance']['attended']) {
+
+                                        foreach ($participant['session_registrations'] ?? [] as $sessionReg) {
+                                            if (
+                                                isset($sessionReg['attendance']) &&
+                                                $sessionReg['attendance']['attended']
+                                            ) {
                                                 $attendedCount++;
                                             }
                                         }
                                     @endphp
-                                    
-                                    @if($totalSessions > 0)
+
+                                    @if ($totalSessions > 0)
                                         <div class="d-flex align-items-center">
                                             <div class="progress me-2" style="width: 60px; height: 6px;">
-                                                <div class="progress-bar" role="progressbar" 
-                                                     style="width: {{ ($attendedCount / $totalSessions) * 100 }}%">
+                                                <div class="progress-bar" role="progressbar"
+                                                    style="width: {{ ($attendedCount / $totalSessions) * 100 }}%">
                                                 </div>
                                             </div>
                                             <small>{{ $attendedCount }}/{{ $totalSessions }}</small>
@@ -233,22 +322,8 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        @if($participant['payment_status'] === 'pending')
-                                            <button class="btn btn-sm btn-success approve-payment-btn" 
-                                                    data-id="{{ $participant['_id'] }}"
-                                                    title="Approve Payment">
-                                                <i class="bx bx-check"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger reject-payment-btn" 
-                                                    data-id="{{ $participant['_id'] }}"
-                                                    title="Reject Payment">
-                                                <i class="bx bx-x"></i>
-                                            </button>
-                                        @endif
-                                        
-                                        <button class="btn btn-sm btn-info participant-details-btn" 
-                                                data-id="{{ $participant['_id'] }}"
-                                                title="View Details">
+                                        <button class="btn btn-sm btn-info participant-details-btn"
+                                            data-id="{{ $participant['_id'] }}" title="View Details">
                                             <i class="bx bx-show"></i>
                                         </button>
                                     </div>
@@ -301,26 +376,25 @@
             </div>
         </div>
     </div>
-
 @endsection
 
 @section('scripts')
-<script>
-$(document).ready(function() {
-    // Session details modal
-    $('.session-details-btn').on('click', function() {
-        const participantName = $(this).data('participant-name');
-        const sessions = $(this).data('sessions');
-        
-        $('#sessionDetailsTitle').text(`${participantName} - Sessions`);
-        
-        let html = '';
-        if (sessions && sessions.length > 0) {
-            sessions.forEach(sessionReg => {
-                const session = sessionReg.session_id;
-                const attendance = sessionReg.attendance;
-                
-                html += `
+    <script>
+        $(document).ready(function() {
+            // Session details modal
+            $('.session-details-btn').on('click', function() {
+                const participantName = $(this).data('participant-name');
+                const sessions = $(this).data('sessions');
+
+                $('#sessionDetailsTitle').text(`${participantName} - Sessions`);
+
+                let html = '';
+                if (sessions && sessions.length > 0) {
+                    sessions.forEach(sessionReg => {
+                        const session = sessionReg.session_id;
+                        const attendance = sessionReg.attendance;
+
+                        html += `
                     <div class="card mb-3">
                         <div class="card-body">
                             <div class="row">
@@ -338,7 +412,7 @@ $(document).ready(function() {
                                 <div class="col-md-4 text-end">
                                     ${attendance && attendance.attended ? 
                                         `<span class="badge bg-success mb-2">Attended</span><br>
-                                         <small class="text-muted">Check-in: ${new Date(attendance.check_in_time).toLocaleString()}</small>` :
+                                                 <small class="text-muted">Check-in: ${new Date(attendance.check_in_time).toLocaleString()}</small>` :
                                         `<span class="badge bg-warning">Not Attended</span>`
                                     }
                                 </div>
@@ -346,105 +420,31 @@ $(document).ready(function() {
                         </div>
                     </div>
                 `;
-            });
-        } else {
-            html = '<p class="text-center text-muted">No sessions registered</p>';
-        }
-        
-        $('#sessionDetailsContent').html(html);
-        $('#sessionDetailsModal').modal('show');
-    });
-
-    // Approve payment
-    $('.approve-payment-btn').on('click', function() {
-        const registrationId = $(this).data('id');
-        
-        Swal.fire({
-            title: 'Approve Payment?',
-            text: 'This will confirm the participant registration.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, Approve',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                updatePaymentStatus(registrationId, 'approved');
-            }
-        });
-    });
-
-    // Reject payment
-    $('.reject-payment-btn').on('click', function() {
-        const registrationId = $(this).data('id');
-        
-        Swal.fire({
-            title: 'Reject Payment?',
-            input: 'textarea',
-            inputLabel: 'Rejection Reason',
-            inputPlaceholder: 'Please provide a reason for rejection...',
-            inputValidator: (value) => {
-                if (!value) {
-                    return 'You need to provide a reason!'
-                }
-            },
-            showCancelButton: true,
-            confirmButtonText: 'Reject',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                updatePaymentStatus(registrationId, 'rejected', result.value);
-            }
-        });
-    });
-
-    function updatePaymentStatus(registrationId, status, reason = null) {
-        const data = { status: status };
-        if (reason) data.rejection_reason = reason;
-
-        $.ajax({
-            url: `/committee/registrations/${registrationId}/payment-status`,
-            type: 'PATCH',
-            data: data,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.success) {
-                    Swal.fire({
-                        title: 'Success!',
-                        text: `Payment ${status} successfully`,
-                        icon: 'success'
-                    }).then(() => {
-                        location.reload();
                     });
+                } else {
+                    html = '<p class="text-center text-muted">No sessions registered</p>';
                 }
-            },
-            error: function(xhr) {
+
+                $('#sessionDetailsContent').html(html);
+                $('#sessionDetailsModal').modal('show');
+            });
+
+            // Success/Error messages
+            @if (session('success'))
+                Swal.fire({
+                    title: 'Success!',
+                    text: '{{ session('success') }}',
+                    icon: 'success'
+                });
+            @endif
+
+            @if (session('error'))
                 Swal.fire({
                     title: 'Error!',
-                    text: 'Failed to update payment status',
+                    text: '{{ session('error') }}',
                     icon: 'error'
                 });
-            }
+            @endif
         });
-    }
-
-    // Success/Error messages
-    @if(session('success'))
-        Swal.fire({
-            title: 'Success!',
-            text: '{{ session('success') }}',
-            icon: 'success'
-        });
-    @endif
-
-    @if(session('error'))
-        Swal.fire({
-            title: 'Error!',
-            text: '{{ session('error') }}',
-            icon: 'error'
-        });
-    @endif
-});
-</script>
+    </script>
 @endsection

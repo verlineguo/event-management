@@ -1,197 +1,150 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('committee.layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Scanner - Event Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <style>
-        .scanner-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
+@section('content')
+    <div class="container-xxl flex-grow-1 container-p-y">
+        <!-- Header -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-1">QR Code Scanner</h4>
+                        <p class="text-muted mb-0">Event: <strong>{{ $data['event']['name'] }}</strong></p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('committee.event.participants', $data['event']['_id']) }}"
+                            class="btn btn-outline-secondary">
+                            <i class="bx bx-arrow-back me-1"></i>Back
+                        </a>
+                        <button class="btn btn-primary" id="switchCamera">
+                            <i class="bx bx-refresh me-1"></i>Switch Camera
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        .qr-reader {
-            border: 2px solid #007bff;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .scan-result {
-            transition: all 0.3s ease;
-        }
-
-        .success-animation {
-            animation: successPulse 0.6s ease-in-out;
-        }
-
-        @keyframes successPulse {
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.05);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        .recent-scans {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .scan-item {
-            border-left: 4px solid #28a745;
-            transition: all 0.2s ease;
-        }
-
-        .scan-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .scanner-controls {
-            position: relative;
-            z-index: 10;
-        }
-    </style>
-</head>
-
-<body class="bg-light">
-    <div class="container-fluid py-4">
         <div class="row">
-            <div class="col-12">
-                <!-- Header -->
+            <!-- Scanner Section -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bx bx-qr-scan me-2"></i>QR Code Scanner
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="scanner-container">
+                            <!-- Scanner Status -->
+                            <div class="alert alert-info text-center mb-3" id="scannerStatus">
+                                <i class="bx bx-info-circle me-2"></i>
+                                Click "Start Scanner" to begin scanning QR codes
+                            </div>
+
+                            <!-- Scanner Controls -->
+                            <div class="text-center mb-3 scanner-controls">
+                                <button class="btn btn-success btn-lg" id="startScanner">
+                                    <i class="bx bx-play me-2"></i>Start Scanner
+                                </button>
+                                <button class="btn btn-danger btn-lg d-none" id="stopScanner">
+                                    <i class="bx bx-stop me-2"></i>Stop Scanner
+                                </button>
+                            </div>
+
+                            <!-- QR Reader Container dengan Preview -->
+                            <div class="qr-reader-wrapper" id="qrReaderWrapper">
+                                <div id="qr-reader" class="qr-reader d-none">
+                                    <!-- QR Frame Overlay -->
+                                    <div class="qr-frame-overlay">
+                                        <div class="qr-frame">
+                                            <div class="qr-corner top-left"></div>
+                                            <div class="qr-corner top-right"></div>
+                                            <div class="qr-corner bottom-left"></div>
+                                            <div class="qr-corner bottom-right"></div>
+                                        </div>
+                                        <div class="qr-instruction">
+                                            <p>Arahkan QR code ke dalam frame</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Manual Entry Alternative -->
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-center">
+                                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse"
+                                        data-bs-target="#manualEntry">
+                                        <i class="bx bx-edit me-1"></i>Manual Entry
+                                    </button>
+                                </div>
+                                <div class="collapse mt-3" id="manualEntry">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <form id="manualScanForm">
+                                                @csrf
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="manualQRInput"
+                                                        name="qr_token" placeholder="Enter QR code token manually..."
+                                                        required>
+                                                    <input type="hidden" name="event_id" value="{{ $data['event']['_id'] }}">
+                                                    <button class="btn btn-primary" type="submit">
+                                                        <i class="bx bx-check"></i>Submit
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="col-lg-4">
+                <!-- Current Scan Result -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bx bx-check-circle me-2"></i>Scan Result
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="scanResult" class="text-center text-muted py-3">
+                            <i class="bx bx-qr-scan" style="font-size: 3rem; opacity: 0.3;"></i>
+                            <p class="mt-2 mb-0">No scan yet</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
                 <div class="card mb-4">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h4 class="mb-1">QR Code Scanner</h4>
-                                <p class="text-muted mb-0">Event: <strong>Workshop Web Development</strong></p>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h4 class="text-success mb-1" id="successCount">0</h4>
+                                <small class="text-muted">Successful</small>
                             </div>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-outline-secondary" onclick="history.back()">
-                                    <i class="bx bx-arrow-back me-1"></i>Back
-                                </button>
-                                <button class="btn btn-primary" id="switchCamera">
-                                    <i class="bx bx-refresh me-1"></i>Switch Camera
-                                </button>
+                            <div class="col-6">
+                                <h4 class="text-danger mb-1" id="errorCount">0</h4>
+                                <small class="text-muted">Errors</small>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <!-- Scanner Section -->
-                    <div class="col-lg-8">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    <i class="bx bx-qr-scan me-2"></i>QR Code Scanner
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="scanner-container">
-                                    <!-- Scanner Status -->
-                                    <div class="alert alert-info text-center mb-3" id="scannerStatus">
-                                        <i class="bx bx-info-circle me-2"></i>
-                                        Click "Start Scanner" to begin scanning QR codes
-                                    </div>
-
-                                    <!-- Scanner Controls -->
-                                    <div class="text-center mb-3 scanner-controls">
-                                        <button class="btn btn-success btn-lg" id="startScanner">
-                                            <i class="bx bx-play me-2"></i>Start Scanner
-                                        </button>
-                                        <button class="btn btn-danger btn-lg d-none" id="stopScanner">
-                                            <i class="bx bx-stop me-2"></i>Stop Scanner
-                                        </button>
-                                    </div>
-
-                                    <!-- QR Reader Container -->
-                                    <div id="qr-reader" class="qr-reader d-none"></div>
-
-                                    <!-- Manual Entry Alternative -->
-                                    <div class="mt-3">
-                                        <div class="d-flex justify-content-center">
-                                            <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse"
-                                                data-bs-target="#manualEntry">
-                                                <i class="bx bx-edit me-1"></i>Manual Entry
-                                            </button>
-                                        </div>
-                                        <div class="collapse mt-3" id="manualEntry">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <div class="input-group">
-                                                        <input type="text" class="form-control" id="manualQRInput"
-                                                            placeholder="Enter QR code token manually...">
-                                                        <button class="btn btn-primary" id="submitManualQR">
-                                                            <i class="bx bx-check"></i>Submit
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Recent Scans -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bx bx-history me-2"></i>Recent Scans
+                        </h6>
                     </div>
-
-                    <!-- Results Section -->
-                    <div class="col-lg-4">
-                        <!-- Current Scan Result -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h6 class="mb-0">
-                                    <i class="bx bx-check-circle me-2"></i>Scan Result
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div id="scanResult" class="text-center text-muted py-3">
-                                    <i class="bx bx-qr-scan" style="font-size: 3rem; opacity: 0.3;"></i>
-                                    <p class="mt-2 mb-0">No scan yet</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Stats -->
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <div class="row text-center">
-                                    <div class="col-6">
-                                        <h4 class="text-success mb-1" id="successCount">0</h4>
-                                        <small class="text-muted">Successful</small>
-                                    </div>
-                                    <div class="col-6">
-                                        <h4 class="text-danger mb-1" id="errorCount">0</h4>
-                                        <small class="text-muted">Errors</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Recent Scans -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">
-                                    <i class="bx bx-history me-2"></i>Recent Scans
-                                </h6>
-                            </div>
-                            <div class="card-body p-0">
-                                <div id="recentScans" class="recent-scans">
-                                    <div class="text-center text-muted py-3">
-                                        <i class="bx bx-time" style="font-size: 2rem; opacity: 0.3;"></i>
-                                        <p class="mt-2 mb-0">No recent scans</p>
-                                    </div>
-                                </div>
+                    <div class="card-body p-0">
+                        <div id="recentScans" class="recent-scans">
+                            <div class="text-center text-muted py-3">
+                                <i class="bx bx-time" style="font-size: 2rem; opacity: 0.3;"></i>
+                                <p class="mt-2 mb-0">No recent scans</p>
                             </div>
                         </div>
                     </div>
@@ -241,10 +194,209 @@
             </div>
         </div>
     </div>
+@endsection
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@section('styles')
+    <style>
+        .qr-reader-wrapper {
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+        }
 
+        .qr-reader {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            min-height: 300px;
+        }
 
+        /* Style untuk video preview */
+        .qr-reader video {
+            width: 100% !important;
+            height: auto !important;
+            border-radius: 12px;
+        }
+
+        /* QR Frame Overlay */
+        .qr-frame-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .qr-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            box-shadow: 
+                0 0 0 9999px rgba(0, 0, 0, 0.3),
+                inset 0 0 0 2px rgba(255, 255, 255, 0.8);
+        }
+
+        /* Corner indicators */
+        .qr-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #28a745;
+            border-radius: 3px;
+        }
+
+        .qr-corner.top-left {
+            top: -3px;
+            left: -3px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .qr-corner.top-right {
+            top: -3px;
+            right: -3px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .qr-corner.bottom-left {
+            bottom: -3px;
+            left: -3px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .qr-corner.bottom-right {
+            bottom: -3px;
+            right: -3px;
+            border-left: none;
+            border-top: none;
+        }
+
+        /* Instruction text */
+        .qr-instruction {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .qr-instruction p {
+            margin: 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Animation untuk corner */
+        .qr-corner {
+            animation: pulse-corner 2s infinite;
+        }
+
+        @keyframes pulse-corner {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
+        }
+
+        /* Success animation */
+        .scan-result.success-animation {
+            animation: pulse 0.6s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Recent scans styling */
+        .recent-scans .scan-item {
+            border-left: 3px solid #dee2e6;
+        }
+
+        .recent-scans .scan-item.bg-light-success {
+            background-color: #f8f9fa !important;
+            border-left-color: #28a745;
+        }
+
+        .recent-scans .scan-item.bg-light-danger {
+            background-color: #f8f9fa !important;
+            border-left-color: #dc3545;
+        }
+
+        /* Success flash effect */
+        .qr-frame.scan-success {
+            border-color: #28a745;
+            box-shadow: 
+                0 0 0 9999px rgba(0, 0, 0, 0.3),
+                inset 0 0 0 2px #28a745,
+                0 0 20px rgba(40, 167, 69, 0.6);
+            animation: success-flash 0.5s ease-out;
+        }
+
+        @keyframes success-flash {
+            0% {
+                box-shadow: 
+                    0 0 0 9999px rgba(0, 0, 0, 0.3),
+                    inset 0 0 0 2px #28a745,
+                    0 0 5px rgba(40, 167, 69, 0.3);
+            }
+            50% {
+                box-shadow: 
+                    0 0 0 9999px rgba(0, 0, 0, 0.3),
+                    inset 0 0 0 2px #28a745,
+                    0 0 30px rgba(40, 167, 69, 0.8);
+            }
+            100% {
+                box-shadow: 
+                    0 0 0 9999px rgba(0, 0, 0, 0.3),
+                    inset 0 0 0 2px #28a745,
+                    0 0 20px rgba(40, 167, 69, 0.6);
+            }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .qr-frame {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .qr-instruction {
+                font-size: 12px;
+                bottom: 15px;
+                padding: 6px 12px;
+            }
+        }
+    </style>
+@endsection
+
+@section('scripts')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <script>
         class QRScanner {
             constructor() {
@@ -254,6 +406,7 @@
                 this.errorCount = 0;
                 this.currentCameraId = null;
                 this.cameras = [];
+                this.eventId = '{{ $data['event']['_id'] }}';
 
                 this.initializeElements();
                 this.bindEvents();
@@ -270,20 +423,19 @@
                 this.recentScansDiv = document.getElementById('recentScans');
                 this.successCountSpan = document.getElementById('successCount');
                 this.errorCountSpan = document.getElementById('errorCount');
-                this.manualInput = document.getElementById('manualQRInput');
-                this.submitManualBtn = document.getElementById('submitManualQR');
+                this.manualForm = document.getElementById('manualScanForm');
+                this.qrFrame = document.querySelector('.qr-frame');
             }
 
             bindEvents() {
                 this.startBtn.addEventListener('click', () => this.startScanner());
                 this.stopBtn.addEventListener('click', () => this.stopScanner());
                 this.switchBtn.addEventListener('click', () => this.switchCamera());
-                this.submitManualBtn.addEventListener('click', () => this.submitManualQR());
 
-                this.manualInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        this.submitManualQR();
-                    }
+                // Handle manual form submission
+                this.manualForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.submitManualQR();
                 });
             }
 
@@ -312,23 +464,30 @@
 
                     const config = {
                         fps: 10,
-                        qrbox: {
-                            width: 250,
-                            height: 250
+                        qrbox: function(viewfinderWidth, viewfinderHeight) {
+                            // Make qr box responsive but keep it within frame
+                            let minEdgePercentage = 0.5;
+                            let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                            let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                            return {
+                                width: Math.min(qrboxSize, 250),
+                                height: Math.min(qrboxSize, 250)
+                            };
                         },
-                        aspectRatio: 1.0
+                        aspectRatio: 1.0,
+                        // Show video feed
+                        rememberLastUsedCamera: true,
+                        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
                     };
 
                     await this.html5QrCode.start(
-                        this.currentCameraId || {
-                            facingMode: "environment"
-                        },
+                        this.currentCameraId || { facingMode: "environment" },
                         config,
                         (decodedText, decodedResult) => {
                             this.onScanSuccess(decodedText, decodedResult);
                         },
                         (errorMessage) => {
-                            // Ignore frequent scan errors
+                            // Ignore frequent scan errors - these are normal
                         }
                     );
 
@@ -336,7 +495,7 @@
                     this.startBtn.classList.add('d-none');
                     this.stopBtn.classList.remove('d-none');
                     this.readerDiv.classList.remove('d-none');
-                    this.updateStatus('Scanner active - Point camera at QR code', 'success');
+                    this.updateStatus('Scanner active - Arahkan QR code ke dalam frame', 'success');
 
                 } catch (err) {
                     console.error('Error starting scanner:', err);
@@ -379,6 +538,14 @@
             async onScanSuccess(decodedText, decodedResult) {
                 console.log('QR Code scanned:', decodedText);
 
+                // Add success flash effect
+                if (this.qrFrame) {
+                    this.qrFrame.classList.add('scan-success');
+                    setTimeout(() => {
+                        this.qrFrame.classList.remove('scan-success');
+                    }, 500);
+                }
+
                 // Process the scanned QR code
                 await this.processQRCode(decodedText);
 
@@ -397,22 +564,20 @@
                 try {
                     this.updateScanResult('Processing...', 'info');
 
-                    // Send QR token to backend for verification
-                    const response = await fetch('/api/scan-qr', {
+                    // Send to Laravel controller
+                    const formData = new FormData();
+                    formData.append('qr_token', qrToken);
+                    formData.append('event_id', this.eventId);
+                    formData.append('_token', '{{ csrf_token() }}');
+
+                    const response = await fetch('{{ route('committee.event.process-scan') }}', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` // Adjust based on your auth system
-                        },
-                        body: JSON.stringify({
-                            qr_token: qrToken,
-                            scanned_by: 'current_user_id' // You'll need to pass the actual scanner user ID
-                        })
+                        body: formData
                     });
 
                     const result = await response.json();
 
-                    if (response.ok) {
+                    if (result.success) {
                         this.handleScanSuccess(result);
                     } else {
                         this.handleScanError(result.message || 'Scan failed');
@@ -420,6 +585,35 @@
 
                 } catch (error) {
                     console.error('Error processing QR code:', error);
+                    this.handleScanError('Network error occurred');
+                }
+            }
+
+            async submitManualQR() {
+                const formData = new FormData(this.manualForm);
+
+                try {
+                    this.updateScanResult('Processing manual entry...', 'info');
+
+                    const response = await fetch('{{ route('committee.event.process-manual') }}', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.handleScanSuccess(result);
+                        this.manualForm.reset();
+                        // Collapse manual entry
+                        const collapse = new bootstrap.Collapse(document.getElementById('manualEntry'));
+                        collapse.hide();
+                    } else {
+                        this.handleScanError(result.message || 'Manual scan failed');
+                    }
+
+                } catch (error) {
+                    console.error('Error processing manual QR:', error);
                     this.handleScanError('Network error occurred');
                 }
             }
@@ -451,8 +645,8 @@
                 // Show success modal
                 this.showSuccessModal(participant);
 
-                // Play success sound (optional)
-                this.playSuccessSound();
+                // Show Laravel success message
+                this.showAlert('success', 'Check-in berhasil untuk ' + participant.name);
             }
 
             handleScanError(errorMessage) {
@@ -478,14 +672,13 @@
                 // Show error modal
                 this.showErrorModal(errorMessage);
 
-                // Play error sound (optional)
-                this.playErrorSound();
+                // Show Laravel error message
+                this.showAlert('error', errorMessage);
             }
 
             updateScanResult(content, type) {
                 this.resultDiv.innerHTML = content;
-                this.resultDiv.className =
-                    `scan-result text-center py-3 ${type === 'success' ? 'success-animation' : ''}`;
+                this.resultDiv.className = `scan-result text-center py-3 ${type === 'success' ? 'success-animation' : ''}`;
             }
 
             addRecentScan(scanData) {
@@ -495,8 +688,7 @@
                 }
 
                 const scanItem = document.createElement('div');
-                scanItem.className =
-                    `scan-item p-3 mb-2 ${scanData.status === 'success' ? 'bg-light-success' : 'bg-light-danger'}`;
+                scanItem.className = `scan-item p-3 mb-2 ${scanData.status === 'success' ? 'bg-light-success' : 'bg-light-danger'}`;
 
                 if (scanData.status === 'success') {
                     scanItem.innerHTML = `
@@ -576,36 +768,56 @@
                 modal.show();
             }
 
-            submitManualQR() {
-                const qrToken = this.manualInput.value.trim();
-                if (!qrToken) {
-                    alert('Please enter a QR code token');
-                    return;
-                }
-
-                this.processQRCode(qrToken);
-                this.manualInput.value = '';
-            }
-
             updateStatus(message, type) {
                 this.statusDiv.innerHTML = `<i class="bx bx-info-circle me-2"></i>${message}`;
                 this.statusDiv.className = `alert alert-${type} text-center mb-3`;
             }
 
-            playSuccessSound() {
-                // Optional: Play success sound
-                const audio = new Audio(
-                    'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvGMcBDSL0fPTgS4FJXzE7t+XRwwQWrjn6qNXFAhtm+vthUIJCWq29+mgpNR3NgQHgG63ABgqQPOGCIHatPMJEcJhCRG4cCIGBFyiOJG2NQQPAml4MMMWM0UoWDMsVGSGNQkPB1y0PpSkHQJLdOzgzRgqQAYHJGz0FjFMKQIYWDMsVGSGNQkPB1y0PpSkHQJLdOzgzRgqQAoFJYzl5KVNEQ9+kO3v3mccBx+GyfPj0E9OAghz'
-                    );
-                audio.play().catch(() => {}); // Ignore errors if audio fails
+            showAlert(type, message) {
+                // Create toast notification
+                const toastContainer = document.querySelector('.toast-container') || this.createToastContainer();
+                const toast = this.createToast(type, message);
+                toastContainer.appendChild(toast);
+                
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                
+                // Remove toast after it's hidden
+                toast.addEventListener('hidden.bs.toast', () => {
+                    toast.remove();
+                });
             }
 
-            playErrorSound() {
-                // Optional: Play error sound
-                const audio = new Audio(
-                    'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvGMcBDSL0fPTgS4FJXzE7t+XRwwQWrjn6qNXFAhtm+vthUIJCWq29+mgpNR3NgQHgG63ABgqQPOGCIHatPMJEcJhCRG4cCIGBFyiOJG2NQQPAml4MMMWM0UoWDMsVGSGNQkPB1y0PpSkHQJLdOzgzRgqQAYHJGz0FjFMKQIYWDMsVGSGNQkPB1y0PpSkHQJLdOzgzRgqQAoFJYzl5KVNEQ9+kO3v3mccBx+GyfPj0E9OAghz'
-                    );
-                audio.play().catch(() => {}); // Ignore errors if audio fails
+            createToastContainer() {
+                const container = document.createElement('div');
+                container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                container.style.zIndex = '1060';
+                document.body.appendChild(container);
+                return container;
+            }
+
+            createToast(type, message) {
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                toast.setAttribute('data-bs-delay', '3000');
+
+                const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+                
+                toast.innerHTML = `
+                    <div class="toast-header ${bgClass} text-white">
+                        <i class="bx ${type === 'success' ? 'bx-check-circle' : 'bx-x-circle'} me-2"></i>
+                        <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                `;
+                
+                return toast;
             }
         }
 
@@ -614,6 +826,4 @@
             const scanner = new QRScanner();
         });
     </script>
-</body>
-
-</html>
+@endsection

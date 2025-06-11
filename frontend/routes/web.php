@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminMainController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\CommitteeMainController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FinanceMainController;
@@ -88,6 +89,16 @@ Route::prefix('committee')
             Route::get('/event/search', 'search')->name('committee.event.search');
             Route::patch('/event/{id}/status', 'updateStatus')->name('committee.event.status.update');
         });
+
+        Route::controller(AttendanceController::class)->group(function () {
+            Route::get('/event/{id}/participants', 'participants')->name('committee.event.participants');
+            Route::get('/event/{id}/scan-qr', 'scanQR')->name('committee.event.scan-qr');
+            Route::post('/event/scan-qr', 'processScan')->name('committee.event.process-scan');
+            Route::post('/event/manual', 'manualCheckIn')->name('committee.event.process-manual');
+            Route::get('/attendance/session/{id}', 'sessionAttendance')->name('committee.attendance.session');
+            Route::post('/attendance/session/{id}/upload-certificate', 'uploadCertificate')->name('committee.attendance.upload-certificate');
+            Route::post('/attendance/session/{id}/bulk-upload-certificates', 'bulkUploadCertificates')->name('committee.attendance.bulk-upload-certificates');
+        });
     });
 
 Route::prefix('member')
@@ -98,7 +109,6 @@ Route::prefix('member')
             Route::get('/events', 'events')->name('member.events.index');
             Route::get('/events/{id}', 'showEvent')->name('member.events.show');
             Route::get('/events/search', 'search')->name('member.event.search');
-
         });
 
         Route::controller(MemberRegistrationController::class)->group(function () {
@@ -114,8 +124,7 @@ Route::prefix('member')
             Route::post('/registration-draft/{id}', 'saveDraftRegistration')->name('member.registration-draft.save');
             Route::get('/registration-draft/{id}', 'getDraft')->name('member.registration-draft.get');
             Route::delete('/registration-draft/{id}', 'deleteDraft')->name('member.registration-draft.delete');
-                   Route::get('/registrations/{id}', 'showRegistration')->name('member.myRegistrations.show');
-
+            Route::get('/registrations/{id}', 'showRegistration')->name('member.myRegistrations.show');
         });
     });
 

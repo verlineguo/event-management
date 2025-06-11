@@ -6,7 +6,6 @@ const Event = require('../models/Event');
 const Attendance = require('../models/Attendance');
 
 
-
 // Scan QR Code for attendance
 exports.scanQRCode = async (req, res) => {
   try {
@@ -244,61 +243,162 @@ exports.getSessionAttendance = async (req, res) => {
   }
 };
 
+
+
 // Get all participants for an event
 exports.getEventParticipants = async (req, res) => {
   try {
     const { eventId } = req.params;
+    
+    // Basic validation
+    if (!eventId) {
+      return res.status(400).json({ 
+        message: 'Event ID is required',
+        event: null,
+        participants: [],
+        total_participants: 0
+      });
+    }
 
-    const registrations = await Registration.find({ 
-      event_id: eventId,
-      registration_status: 'confirmed',
-      payment_status: 'approved'
+    // Find event with populated fields
+    const event = await Event.findById(eventId)
+      .populate('category_id', 'name')
+      .populate('created_by', 'name');
+
+    if (!event) {
+      return res.status(404).json({ 
+        message: 'Event not found',
+        event: null,
+        participants: [],
+        total_participants: 0
+      });
+    }
+
+    // Get event sessions
+    const eventSessions = await Session.find({
+      event_id: event._id
+    }).sort({ session_order: 1, date: 1 });
+
+    // Get registrations with populated user data
+    const registrations = await Registration.find({
+      event_id: event._id
     })
     .populate('user_id', 'name email phone profile')
     .populate('payment_verified_by', 'name')
     .sort({ createdAt: -1 });
 
-    // Get session registrations for each participant
-    const participantsWithSessions = await Promise.all(
-      registrations.map(async (registration) => {
+    // Get participants with session data
+    const participantsWithSessions = [];
+    
+    for (const registration of registrations) {
+      try {
         const sessionRegistrations = await SessionRegistration.find({
           registration_id: registration._id
         })
-        .populate('session_id', 'title date start_time end_time')
+        .populate('session_id', 'title date start_time end_time location')
         .sort({ 'session_id.date': 1 });
 
-        // Get attendance data for each session
-        const sessionsWithAttendance = await Promise.all(
-          sessionRegistrations.map(async (sessionReg) => {
+        const sessionsWithAttendance = [];
+        
+        for (const sessionReg of sessionRegistrations) {
+          try {
             const attendance = await Attendance.findOne({
               session_registration_id: sessionReg._id
             });
 
-            return {
+            sessionsWithAttendance.push({
               ...sessionReg.toObject(),
-              attendance: attendance
-            };
-          })
-        );
+              attendance: attendance ? {
+                attended: attendance.attended,
+                check_in_time: attendance.check_in_time,
+                attendance_method: attendance.attendance_method
+              } : null
+            });
+          } catch (attendanceError) {
+            console.log('Attendance error for session:', sessionReg._id, attendanceError.message);
+            sessionsWithAttendance.push({
+              ...sessionReg.toObject(),
+              attendance: null
+            });
+          }
+        }
 
-        return {
-          registration: registration,
-          sessions: sessionsWithAttendance
+        // Transform the data
+        const participantData = {
+          _id: registration._id,
+          user_id: registration.user_id,
+          event_id: registration.event_id,
+          payment_proof_url: registration.payment_proof_url,
+          payment_amount: registration.payment_amount,
+          payment_status: registration.payment_status,
+          payment_verified_by: registration.payment_verified_by,
+          payment_verified_at: registration.payment_verified_at,
+          rejection_reason: registration.rejection_reason,
+          registration_status: registration.registration_status,
+          createdAt: registration.createdAt,
+          updatedAt: registration.updatedAt,
+          session_registrations: sessionsWithAttendance
         };
-      })
-    );
 
-    const event = await Event.findById(eventId)
-      .populate('category_id', 'name')
-      .populate('created_by', 'name');
+        participantsWithSessions.push(participantData);
+      } catch (sessionError) {
+        console.log('Session error for registration:', registration._id, sessionError.message);
+        
+        // Still add the participant even if session data fails
+        const participantData = {
+          _id: registration._id,
+          user_id: registration.user_id,
+          event_id: registration.event_id,
+          payment_proof_url: registration.payment_proof_url,
+          payment_amount: registration.payment_amount,
+          payment_status: registration.payment_status,
+          payment_verified_by: registration.payment_verified_by,
+          payment_verified_at: registration.payment_verified_at,
+          rejection_reason: registration.rejection_reason,
+          registration_status: registration.registration_status,
+          createdAt: registration.createdAt,
+          updatedAt: registration.updatedAt,
+          session_registrations: []
+        };
+
+        participantsWithSessions.push(participantData);
+      }
+    }
+
+    // Add sessions to event object
+    const eventWithSessions = {
+      ...event.toObject(),
+      sessions: eventSessions
+    };
+
+    // Calculate stats
+    const stats = {
+      total_participants: participantsWithSessions.length,
+      pending_payments: participantsWithSessions.filter(p => p.payment_status === 'pending').length,
+      confirmed_registrations: participantsWithSessions.filter(p => p.registration_status === 'confirmed').length,
+      total_attendances: participantsWithSessions.reduce((total, participant) => {
+        const attendedSessions = participant.session_registrations.filter(session => 
+          session.attendance && session.attendance.attended
+        );
+        return total + attendedSessions.length;
+      }, 0)
+    };
 
     res.json({
-      event: event,
+      event: eventWithSessions,
       participants: participantsWithSessions,
+      stats: stats,
       total_participants: participantsWithSessions.length
     });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Error:', err.message);
+    
+    res.status(500).json({ 
+      message: err.message,
+      event: null,
+      participants: [],
+      total_participants: 0
+    });
   }
 };
