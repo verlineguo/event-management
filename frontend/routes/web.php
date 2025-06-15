@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminMainController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CommitteeMainController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FinanceMainController;
@@ -96,8 +97,16 @@ Route::prefix('committee')
             Route::post('/event/scan-qr', 'processScan')->name('committee.event.process-scan');
             Route::post('/event/manual', 'manualCheckIn')->name('committee.event.process-manual');
             Route::get('/attendance/session/{id}', 'sessionAttendance')->name('committee.attendance.session');
+            
+        });
+        Route::controller(CertificateController::class)->group(function () {
+            
             Route::post('/attendance/session/{id}/upload-certificate', 'uploadCertificate')->name('committee.attendance.upload-certificate');
             Route::post('/attendance/session/{id}/bulk-upload-certificates', 'bulkUploadCertificates')->name('committee.attendance.bulk-upload-certificates');
+            Route::get('certificate/download/{id}', 'downloadCertificate')->name('committee.certificate.download');
+            Route::delete('certificate/revoke/{id}', 'revokeCertificate')->name('committee.certificate.revoke');
+
+            Route::get('/attendance/{sessionId}/export',  'exportAttendance')->name('committee.attendance.export');
         });
     });
 
@@ -126,11 +135,19 @@ Route::prefix('member')
             Route::delete('/registration-draft/{id}', 'deleteDraft')->name('member.registration-draft.delete');
             Route::get('/registrations/{id}', 'showRegistration')->name('member.myRegistrations.show');
         });
+
+        Route::controller(CertificateController::class)->group(function () {
+            Route::get('/event/{id}/certificate', 'certificate')->name('member.event.certificate');
+        });
     });
 
 Route::prefix('guest')->group(function () {
     Route::controller(GuestMainController::class)->group(function () {
         Route::get('/home', 'index')->name('guest.home');
+                    Route::get('/events', 'events')->name('guest.events.index');
+
+                    Route::get('/events/{id}', 'showEvent')->name('guest.events.show');
+
     });
     Route::controller(MemberMainController::class)->group(function () {
         Route::get('/event', 'events')->name('guest.events');

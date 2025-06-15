@@ -14,6 +14,7 @@ const memberEventRoutes = require('./routes/Member');
 const registrationRoutes = require('./routes/Registration');
 const paymentRoutes = require('./routes/Payment');
 const attendanceRoutes = require('./routes/Attendance');
+const certificateRoutes = require('./routes/Certificate');
 // CORS
 app.use(cors({
   origin: 'http://localhost:8000',
@@ -41,6 +42,6 @@ app.use('/api/member/events', memberEventRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/attendance', attendanceRoutes);
-
+app.use('/api/certificate', certificateRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

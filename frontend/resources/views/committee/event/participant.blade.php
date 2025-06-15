@@ -272,12 +272,7 @@
                                         <br><small class="text-muted">Rp
                                             {{ number_format($participant['payment_amount'], 0, ',', '.') }}</small>
                                     @endif
-                                    @if ($participant['payment_proof_url'])
-                                        <br><a href="{{ asset('storage/' . $participant['payment_proof_url']) }}"
-                                            target="_blank" class="text-primary">
-                                            <small><i class="bx bx-file me-1"></i>View Proof</small>
-                                        </a>
-                                    @endif
+                                    
                                 </td>
                                 <td>
                                     @if (isset($participant['session_registrations']) && count($participant['session_registrations']) > 0)

@@ -25,6 +25,8 @@
     <link rel="stylesheet" href="{{ asset('guest/css/flaticon.css') }}">
     <link rel="stylesheet" href="{{ asset('guest/css/icomoon.css') }}">
     <link rel="stylesheet" href="{{ asset('guest/css/style.css') }}">
+        <link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
+
     @yield('styles')
   </head>
   <body>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -112,49 +113,54 @@ class AttendanceController extends Controller
     /**
      * Process QR Code scan
      */
-    public function processScan(Request $request)
-    {
-        $request->validate([
-            'qr_token' => 'required|string',
-            'event_id' => 'required|string',
+    public function processScan(Request $request) {
+    $request->validate([
+        'qr_token' => 'required|string',
+        'event_id' => 'required|string',
+    ]);
+
+    try {
+        // Add debugging
+        Log::info('Processing QR scan:', [
+            'qr_token' => $request->qr_token,
+            'event_id' => $request->event_id,
+            'scanned_by' => session('user_id')
         ]);
 
-        try {
-            // Send scan request to Node.js API
-            $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/attendance/scan-qr', [
-                'qr_token' => $request->qr_token,
-                'scanned_by' => session('user_id'), // Assuming you store user_id in session
+        // Send scan request to Node.js API
+        $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/attendance/scan-qr', [
+            'qr_token' => $request->qr_token,
+            'scanned_by' => session('user_id'),
+        ]);
+
+        $result = $response->json();
+        
+        // Log the response
+        Log::info('API Response:', [
+            'status' => $response->status(),
+            'body' => $result
+        ]);
+
+        if ($response->successful()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Check-in berhasil!',
+                'participant' => $result['participant'],
             ]);
-
-            $result = $response->json();
-
-            if ($response->successful()) {
-                // Success response
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Check-in berhasil!',
-                    'participant' => $result['participant'],
-                ]);
-            } else {
-                // Error response from API
-                return response()->json(
-                    [
-                        'success' => false,
-                        'message' => $result['message'] ?? 'Scan gagal',
-                    ],
-                    $response->status(),
-                );
-            }
-        } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
-                ],
-                500,
-            );
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'Scan gagal',
+            ], $response->status());
         }
+    } catch (\Exception $e) {
+        Log::error('QR Scan Exception:', ['error' => $e->getMessage()]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+        ], 500);
     }
+}
 
     /**
      * Manual check-in (backup method)
@@ -208,13 +214,12 @@ class AttendanceController extends Controller
     {
         try {
             $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/attendance/session/' . $id);
-
+            
             if (!$response->successful()) {
                 return redirect()->back()->with('error', 'Gagal mengambil data kehadiran');
             }
 
             $data = $response->json();
-            
             return view('committee.event.attendance', compact('data'));
         } catch (\Exception $e) {
             return redirect()
@@ -223,150 +228,7 @@ class AttendanceController extends Controller
         }
     }
 
-    public function uploadCertificate(Request $request, $sessionId)
-    {
-        $request->validate([
-            'certificate' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'participant_id' => 'required|string',
-        ]);
-
-        try {
-            // Handle file upload
-            if ($request->hasFile('certificate')) {
-                $file = $request->file('certificate');
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('certificates', $filename, 'public');
-
-                // Send certificate info to API
-                $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/sessions/' . $sessionId . '/certificate', [
-                    'participant_id' => $request->participant_id,
-                    'certificate_path' => $path,
-                    'uploaded_by' => session('user_id'),
-                ]);
-
-                if ($response->successful()) {
-                    return redirect()->back()->with('success', 'Sertifikat berhasil diupload!');
-                } else {
-                    // Delete the uploaded file if API call fails
-                    Storage::disk('public')->delete($path);
-
-                    $errorMessage = 'Gagal menyimpan data sertifikat';
-                    if ($response->status() === 400) {
-                        $errorData = $response->json();
-                        $errorMessage = $errorData['message'] ?? $errorMessage;
-                    }
-
-                    return redirect()->back()->with('error', $errorMessage);
-                }
-            }
-
-            return redirect()->back()->with('error', 'File sertifikat tidak ditemukan');
-        } catch (\Exception $e) {
-            return redirect()
-                ->back()
-                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Bulk upload certificates for completed session
-     */
-    public function bulkUploadCertificates(Request $request, $sessionId)
-    {
-        $request->validate([
-            'certificates' => 'required|array|min:1',
-            'certificates.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'participant_ids' => 'required|array|min:1',
-            'participant_ids.*' => 'required|string',
-        ]);
-
-        try {
-            $successCount = 0;
-            $errorCount = 0;
-            $uploadedFiles = []; // Track uploaded files for cleanup on error
-            $errorMessages = [];
-
-            $files = $request->file('certificates');
-            $participantIds = $request->participant_ids;
-
-            // Validate that we have files to process
-            if (empty($files) || empty($participantIds)) {
-                return redirect()->back()->with('error', 'Tidak ada file atau peserta yang dipilih');
-            }
-
-            foreach ($files as $index => $file) {
-                try {
-                    // Generate unique filename
-                    $filename = time() . '_' . $index . '_' . $file->getClientOriginalName();
-                    $path = $file->storeAs('certificates', $filename, 'public');
-                    $uploadedFiles[] = $path; // Track for potential cleanup
-
-                    // Determine participant ID for this file
-                    // If we have matching number of files and participants, use index
-                    // Otherwise, we'll need a different strategy
-                    $participantId = null;
-                    if (count($participantIds) > $index) {
-                        $participantId = $participantIds[$index];
-                    } else {
-                        // If more files than selected participants, cycle through participants
-                        $participantId = $participantIds[$index % count($participantIds)];
-                    }
-
-                    // Send certificate info to Node.js API
-                    $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/sessions/' . $sessionId . '/certificate', [
-                        'participant_id' => $participantId,
-                        'certificate_path' => $path,
-                        'uploaded_by' => session('user_id'),
-                    ]);
-
-                    if ($response->successful()) {
-                        $successCount++;
-                    } else {
-                        $errorCount++;
-                        $errorData = $response->json();
-                        $errorMessages[] = 'File ' . ($index + 1) . ': ' . ($errorData['message'] ?? 'Upload failed');
-
-                        // Delete the uploaded file if API call fails
-                        Storage::disk('public')->delete($path);
-                    }
-                } catch (\Exception $e) {
-                    $errorCount++;
-                    $errorMessages[] = 'File ' . ($index + 1) . ': ' . $e->getMessage();
-
-                    // Clean up file if it was uploaded
-                    if (isset($path)) {
-                        Storage::disk('public')->delete($path);
-                    }
-                }
-            }
-
-            // Prepare response message
-            if ($successCount > 0 && $errorCount === 0) {
-                return redirect()
-                    ->back()
-                    ->with('success', "Berhasil mengupload {$successCount} sertifikat!");
-            } elseif ($successCount > 0 && $errorCount > 0) {
-                $message = "Berhasil mengupload {$successCount} sertifikat, {$errorCount} gagal.";
-                if (!empty($errorMessages)) {
-                    $message .= ' Detail error: ' . implode(', ', array_slice($errorMessages, 0, 3));
-                    if (count($errorMessages) > 3) {
-                        $message .= ' dan ' . (count($errorMessages) - 3) . ' error lainnya.';
-                    }
-                }
-                return redirect()->back()->with('warning', $message);
-            } else {
-                $message = 'Semua upload gagal.';
-                if (!empty($errorMessages)) {
-                    $message .= ' Detail error: ' . implode(', ', array_slice($errorMessages, 0, 3));
-                }
-                return redirect()->back()->with('error', $message);
-            }
-        } catch (\Exception $e) {
-            return redirect()
-                ->back()
-                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-        }
-    }
+  
 
     /**
      * Get participant details

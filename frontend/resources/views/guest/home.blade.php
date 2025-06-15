@@ -527,116 +527,200 @@
                     @foreach ($transformedEvents as $event)
                         <div class="event-card ftco-animate">
                             <div class="event-poster">
-                                @if (isset($event['poster']) && $event['poster'])
-                                    <img src="{{ asset('storage/' . $event['poster']) }}"
-                                        alt="{{ $event['name'] ?? 'Event Poster' }}">
-                                @else
-                                    <img src="{{ asset('images/default-event.jpg') }}" alt="Default Event Poster">
-                                @endif
+                                <a href="{{ $event['poster'] }}" class="poster-link" data-lightbox="event-poster"
+                                    data-title="{{ $event['name'] }}">
+                                    <img src="{{ $event['poster'] }}" alt="{{ $event['name'] }}">
+                                </a>
                                 <div class="event-overlay"></div>
 
-                                <div class="event-status status-{{ $event['status'] ?? 'open' }}">
-                                    {{ ucfirst($event['status'] ?? 'Open') }}
+                                <!-- Status Badge -->
+                                <div class="event-status status-{{ $event['status'] }}">
+                                    {{ ucfirst($event['status']) }}
                                 </div>
 
+                          
+
+                                <!-- Date Badge -->
                                 <div class="event-date-badge">
-                                    <div class="day">{{ \Carbon\Carbon::parse($event['date'])->format('d') }}</div>
-                                    <div class="month">{{ \Carbon\Carbon::parse($event['date'])->format('M') }}</div>
+                                    <div class="day">{{ \Carbon\Carbon::parse($event['display_date'])->format('d') }}
+                                    </div>
+                                    <div class="month">{{ \Carbon\Carbon::parse($event['display_date'])->format('M') }}
+                                    </div>
                                 </div>
+
+                                <!-- Sessions Count -->
+                                @if ($event['sessions_count'] > 1)
+                                    <div class="sessions-badge">
+                                        <i class="bx bx-layers"></i> {{ $event['sessions_count'] }} Sessions
+                                    </div>
+                                @endif
+
+                                <!-- Quota Status -->
+                                @if ($event['quota_percentage'] >= 80 && $event['quota_percentage'] < 100)
+                                    <div class="quota-warning">
+                                        <i class="bx bx-alert-triangle"></i> Almost Full
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="event-content">
-                                <h3 class="event-title">{{ $event['name'] ?? 'Event Name' }}</h3>
+                                <h3 class="event-title">{{ $event['name'] }}</h3>
 
-                                <div class="event-meta-grid">
+                                <!-- Description Preview -->
+                                <p class="event-description">
+                                    {{ Str::limit($event['description'], 100) }}
+                                </p>
+
+                                <!-- Enhanced Meta Information -->
+                                <div class="event-meta-section">
                                     <div class="event-meta">
-                                        <i class="fas fa-calendar-alt"></i>
-                                        <span>{{ \Carbon\Carbon::parse($event['date'])->format('M j, Y') }}</span>
-                                    </div>
-
-                                    <div class="event-meta">
-                                        <i class="fas fa-clock"></i>
-                                        <span>{{ $event['time'] ?? 'TBA' }}</span>
-                                    </div>
-
-                                    <div class="event-meta event-meta-full">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                        <span>{{ $event['location'] ?? 'Location TBA' }}</span>
+                                        <i class="bx bx-calendar-alt"></i>
+                                        <span>{{ $event['date_range'] }}</span>
                                     </div>
 
                                     <div class="event-meta">
-                                        <i class="fas fa-users"></i>
-                                        <span>{{ $event['available_slots'] ?? 0 }}/{{ number_format($event['max_participants'] ?? 0) }}</span>
+                                        <i class="bx bx-categories"></i>
+                                        <span>{{ $event['category'] }}</span>
                                     </div>
+
+                                    @if ($event['sessions_count'] > 0)
+                                        <div class="event-meta">
+                                            <i class="bx bx-layers"></i>
+                                            <span>{{ $event['sessions_count'] }}
+                                                {{ $event['sessions_count'] > 1 ? 'Sessions' : 'Session' }}</span>
+                                        </div>
+                                    @endif
+
+                                    @if ($event['speaker_info'])
+                                        <div class="event-meta">
+                                            <i class="bx bx-microphone"></i>
+                                            <span>{{ $event['speaker_info'] }}</span>
+                                        </div>
+                                    @endif
+
+                                    @if ($event['location_info'])
+                                        <div class="event-meta">
+                                            <i class="bx bx-location-plus"></i>
+                                            <span>{{ $event['location_info'] }}</span>
+                                        </div>
+                                    @endif
                                 </div>
 
-                                @if (isset($event['speaker']) && $event['speaker'] && $event['speaker'] !== 'Speaker TBA')
-                                    <div class="event-speaker">
-                                        <div class="speaker-name">
-                                            <i class="fas fa-microphone"></i> {{ $event['speaker'] }}
+                                <!-- Fee Information -->
+                                <div class="event-fee-section">
+                                    @if ($event['is_free'])
+                                        <div class="event-fee free">
+                                            <i class="bx bx-gift"></i> FREE EVENT
+                                        </div>
+                                    @else
+                                        <div class="event-fee">
+                                            <i class="bx bx-money"></i>
+                                            @if ($event['min_fee'] == $event['max_fee'])
+                                                Rp {{ number_format($event['min_fee']) }}
+                                            @else
+                                                Rp {{ number_format($event['min_fee']) }} -
+                                                {{ number_format($event['max_fee']) }}
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <!-- Next Session Info -->
+                                @if ($event['next_session'])
+                                    <div class="next-session-info">
+                                        <h4>Next Session:</h4>
+                                        <div class="session-details">
+                                            <strong>{{ $event['next_session']['title'] }}</strong><br>
+                                            <small>
+                                                <i class="bx bx-timer"></i>
+                                                @php
+                                                    try {
+                                                        $sessionDate = \Carbon\Carbon::parse(
+                                                            $event['next_session']['date'],
+                                                        )->format('M j, Y');
+                                                    } catch (\Exception $e) {
+                                                        $sessionDate = 'Date TBA';
+                                                    }
+                                                @endphp
+                                                {{ $sessionDate }} at {{ $event['next_session']['time'] }}<br>
+                                                <i class="bx bx-user"></i> {{ $event['next_session']['speaker'] }}
+                                            </small>
                                         </div>
                                     </div>
                                 @endif
 
-                                <!-- Slot Information -->
-                                @php
-                                    $availableSlots = $event['available_slots'] ?? 0;
-                                    $maxParticipants = $event['max_participants'] ?? 0;
-                                    $slotsPercentage =
-                                        $maxParticipants > 0
-                                            ? (($maxParticipants - $availableSlots) / $maxParticipants) * 100
-                                            : 0;
-                                @endphp
-
-                                @if ($availableSlots <= 0)
-                                    <div class="slots-info full">
-                                        <i class="fas fa-exclamation-triangle"></i> Event Full
+                                <!-- Availability Status -->
+                                @if ($event['availability_status'] === 'full')
+                                    <div class="availability-status full">
+                                        <i class="bx bx-users"></i> Event Full
+                                        ({{ $event['registered_count'] }}/{{ $event['max_participants'] }})
                                     </div>
-                                @elseif($slotsPercentage >= 80)
-                                    <div class="slots-info almost-full">
-                                        <i class="fas fa-clock"></i> Only {{ $availableSlots }} slots left!
+                                @elseif($event['availability_status'] === 'almost_full')
+                                    <div class="availability-status almost-full">
+                                        <i class="bx bx-users"></i> Almost Full
+                                        ({{ $event['registered_count'] }}/{{ $event['max_participants'] }})
+                                    </div>
+                                @elseif($event['availability_status'] === 'no_sessions')
+                                    <div class="availability-status no-sessions">
+                                        <i class="bx bx-calendar-check"></i> No Sessions Available
                                     </div>
                                 @else
-                                    <div class="slots-info">
-                                        <i class="fas fa-users"></i> {{ $availableSlots }} slots available
+                                    <div class="availability-status available">
+                                        <i class="bx bx-check-circle"></i>
+                                        {{ $event['max_participants'] - $event['registered_count'] }} spots available
                                     </div>
                                 @endif
 
-                                <div class="event-fee {{ ($event['registration_fee'] ?? 0) == 0 ? 'free' : '' }}">
-                                    <i class="fas fa-tag"></i>
-                                    {{ ($event['registration_fee'] ?? 0) == 0 ? 'FREE EVENT' : 'Rp ' . number_format($event['registration_fee']) }}
+                                <!-- Action Buttons -->
+                                <div class="event-actions">
+                                    @if ($event['status'] === 'open' && $event['availability_status'] === 'available')
+                                        <a href="{{ route('guest.events.show', $event['id']) }}"
+                                            class="btn-view-details">
+                                            <i class="bx bx-eye"></i> View Details
+                                        </a>
+                                        <a href="{{ route('member.events.register', $event['id']) }}"
+                                            class="btn-register-event">
+                                            <i class="bx bx-tickets"></i> Register Now
+                                        </a>
+                                    @elseif($event['availability_status'] === 'almost_full')
+                                        <a href="{{ route('guest.events.show', $event['id']) }}"
+                                            class="btn-view-details">
+                                            <i class="bx bx-eye"></i> View Details
+                                        </a>
+                                        <a href="{{ route('member.events.register', $event['id']) }}"
+                                            class="btn-register-event urgent">
+                                            <i class="bx bx-bolt"></i> Register Now!
+                                        </a>
+                                    @elseif($event['availability_status'] === 'full')
+                                        <a href="{{ route('guest.events.show', $event['id']) }}"
+                                            class="btn-view-details">
+                                            <i class="bx bx-eye"></i> View Details
+                                        </a>
+                                        <button class="btn-register-event full" disabled>
+                                            <i class="bx bx-users"></i> Event Full
+                                        </button>
+                                    @else
+                                        <a href="{{ route('guest.events.show', $event['id']) }}"
+                                            class="btn-view-details">
+                                            <i class="bx bx-eye"></i> View Details
+                                        </a>
+                                        <button class="btn-register-event" disabled>
+                                            <i class="bx bx-timer"></i> {{ ucfirst($event['status']) }}
+                                        </button>
+                                    @endif
                                 </div>
-
-                                @if (($event['status'] ?? 'open') === 'open' && $availableSlots > 0)
-                                    <a href="{{ route('member.events.register', $event['id']) }}"
-                                        class="btn-register-event">
-                                        <i class="fas fa-ticket-alt"></i> Register Now
-                                    </a>
-                                @elseif($availableSlots <= 0)
-                                    <button class="btn-register-event full" disabled>
-                                        <i class="fas fa-users"></i> Event Full
-                                    </button>
-                                @else
-                                    <button class="btn-register-event" disabled>
-                                        <i class="fas fa-times-circle"></i> {{ ucfirst($event['status'] ?? 'Closed') }}
-                                    </button>
-                                @endif
                             </div>
                         </div>
                     @endforeach
                 </div>
-
-                <!-- View All Events Button -->
-                <div class="view-all-events ftco-animate">
-                    <a href="{{ route('member.events.index') }}" class="btn-view-all">
-                        <i class="fas fa-list"></i> View All Events
-                    </a>
-                </div>
             @else
                 <div class="no-events ftco-animate">
-                    <i class="fas fa-calendar-times"></i>
-                    <h3>No Events Available</h3>
+                    <i class="bx bx-calendar-check"></i>
+                    <h3>No Featured Events Available</h3>
                     <p>Stay tuned! Amazing events are coming soon.</p>
+                    <a href="{{ route('guest.events.index') }}" class="btn-view-all">
+                        <i class="bx bx-search"></i> Browse All Events
+                    </a>
                 </div>
             @endif
         </div>

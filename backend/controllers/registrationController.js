@@ -243,65 +243,89 @@ exports.getRegistration = async (req, res) => {
 
 // Generate QR codes for confirmed registration
 exports.getQRCodes = async (req, res) => {
- try {
+  try {
     const { id } = req.params; // registration_id
     const userId = req.user._id;
-
+    
     const registration = await Registration.findOne({
       _id: id,
       user_id: userId,
       registration_status: 'confirmed'
     }).populate('event_id', 'name date location')
-    .populate('user_id', 'name email');;
-
+    .populate('user_id', 'name email');
+    
     if (!registration) {
-      return res.status(404).json({ 
-        message: 'Registrasi tidak ditemukan atau belum dikonfirmasi' 
+      return res.status(404).json({
+        message: 'Registrasi tidak ditemukan atau belum dikonfirmasi'
       });
     }
-
+    
     const sessionRegistrations = await SessionRegistration.find({
       registration_id: registration._id
     }).populate('session_id', 'title date start_time end_time location speaker');
-
+    
     const qrCodes = [];
+    
     for (const sessionReg of sessionRegistrations) {
-      if (!sessionReg.qr_code) {
-        // Hanya simpan ID unik, bukan data lengkap
+      // Check if QR token already exists
+      if (!sessionReg.qr_token) {
+        // Generate unique token
         const uniqueToken = crypto.randomUUID();
         
-        // Simpan mapping token ke database
+        console.log('Generating QR token for session registration:', sessionReg._id);
+        console.log('Generated token:', uniqueToken);
+        
+        // Save the token
         sessionReg.qr_token = uniqueToken;
         await sessionReg.save();
-
-        // QR code hanya berisi token
-        const qrCodeDataURL = await QRCode.toDataURL(uniqueToken, {
-          errorCorrectionLevel: 'H',
-          type: 'image/png',
-          quality: 0.92,
-          margin: 1,
-          width: 256
-        });
-
-        sessionReg.qr_code = qrCodeDataURL;
-        await sessionReg.save();
+        
+        console.log('Token saved successfully');
       }
-
+      
+      // Generate QR code image if not exists
+      if (!sessionReg.qr_code) {
+        try {
+          // QR code contains only the token
+          const qrCodeDataURL = await QRCode.toDataURL(sessionReg.qr_token, {
+            errorCorrectionLevel: 'H',
+            type: 'image/png',
+            quality: 0.92,
+            margin: 1,
+            width: 256
+          });
+          
+          sessionReg.qr_code = qrCodeDataURL;
+          await sessionReg.save();
+          
+          console.log('QR code image generated and saved');
+        } catch (qrError) {
+          console.error('Error generating QR code:', qrError);
+          // Continue without QR code image if generation fails
+        }
+      }
+      
+      // Verify the token was saved
+      const verifyReg = await SessionRegistration.findById(sessionReg._id);
+      console.log('Verification - Token exists:', !!verifyReg.qr_token);
+      console.log('Verification - Token value:', verifyReg.qr_token);
+      
       qrCodes.push({
         session: sessionReg.session_id,
         session_registration_id: sessionReg._id,
         qr_code: sessionReg.qr_code,
+        qr_token: sessionReg.qr_token, // Include token in response for debugging
         qr_used: sessionReg.qr_used,
         used_at: sessionReg.used_at
       });
     }
-
+    
     res.json({
       registration: registration,
       qr_codes: qrCodes
     });
-
+    
   } catch (err) {
+    console.error('Get QR Codes Error:', err);
     res.status(500).json({ message: err.message });
   }
 };
