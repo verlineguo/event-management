@@ -46,6 +46,10 @@ Route::prefix('admin')->middleware(['auth.jwt', 'role:admin'])->group(function (
     Route::get('/profile', function () {
         return view('admin.profile');
     })->name('profile');
+
+    Route::middleware(['auth'])->group(function () {
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    });
 });
 
 Route::prefix('finance')->middleware(['auth.jwt', 'role:finance'])->group(function () {
@@ -53,9 +57,9 @@ Route::prefix('finance')->middleware(['auth.jwt', 'role:finance'])->group(functi
         Route::get('/dashboard', 'index')->name('finance.dashboard');
     });
 
-    Route::get('/profile', function () {
-        return view('finance.profile');
-    })->name('profile');
+    // Route::get('/profile', function () {
+    //     return view('finance.profile');
+    // })->name('profile');
 });
 
 
@@ -107,9 +111,9 @@ Route::prefix('member')->middleware(['auth.jwt', 'role:member'])->group(function
         Route::get('/home', action: 'index')->name('member.home');
     });
 
-    Route::get('/profile', function () {
-        return view('member.profile');
-    })->name('profile');
+    // Route::get('/profile', function () {
+    //     return view('member.profile');
+    // })->name('profile');
 
 });
 
