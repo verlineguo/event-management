@@ -96,7 +96,7 @@ exports.createRegistration = async (req, res) => {
       // Update existing draft/pending
       existingDraftOrPending.registration_status = calculatedTotal > 0 ? 'registered' : 'confirmed';
       existingDraftOrPending.payment_status = calculatedTotal > 0 ? 'pending' : 'approved'; 
-      existingDraftOrPending.payment_proof_url = payment_proof_url;
+      existingDraftOrPending.payment_proof_url = payment_proof_url || null;
       existingDraftOrPending.payment_amount = calculatedTotal;
       existingDraftOrPending.updatedAt = new Date();
       
@@ -113,7 +113,7 @@ exports.createRegistration = async (req, res) => {
         event_id,
         user_id: userId,
         payment_amount: calculatedTotal,
-        payment_proof_url,
+        payment_proof_url: payment_proof_url || null,
         registration_status: calculatedTotal > 0 ? 'registered' : 'confirmed',
         payment_status: calculatedTotal > 0 ? 'pending' : 'approved'
       });
@@ -519,8 +519,48 @@ exports.deleteDraft = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+exports.reuploadPayment = async (req, res) => {
+  try {
+    const { id } = req.params; // registration_id
+    const userId = req.user._id;
+    const { payment_proof_url } = req.body;
 
-// Cancel registration (before confirmation)
+    const registration = await Registration.findOne({
+      _id: id,
+      user_id: userId
+    });
+
+    if (!registration) {
+      return res.status(404).json({ message: 'Registrasi tidak ditemukan' });
+    }
+
+    // Check if payment was actually rejected
+    if (registration.payment_status !== 'rejected') {
+      return res.status(400).json({ 
+        message: 'Pembayaran tidak dalam status ditolak' 
+      });
+    }
+
+    // Update payment proof and reset status to pending
+    registration.payment_proof_url = payment_proof_url;
+    registration.payment_status = 'pending';
+    registration.rejection_reason = null; // Clear rejection reason
+    registration.updatedAt = new Date();
+
+    await registration.save();
+
+    res.json({
+      message: 'Bukti pembayaran berhasil diupload ulang',
+      registration: registration
+    });
+
+  } catch (err) {
+    console.error('reuploadPayment error:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Cancel registration (updated)
 exports.cancelRegistration = async (req, res) => {
   try {
     const { id } = req.params; // registration_id
@@ -535,15 +575,24 @@ exports.cancelRegistration = async (req, res) => {
       return res.status(404).json({ message: 'Registrasi tidak ditemukan' });
     }
 
+    // Check if registration can be cancelled
     if (registration.registration_status === 'confirmed') {
       return res.status(400).json({ 
         message: 'Registrasi yang sudah dikonfirmasi tidak dapat dibatalkan' 
       });
     }
 
+    if (registration.registration_status === 'cancelled') {
+      return res.status(400).json({ 
+        message: 'Registrasi sudah dibatalkan sebelumnya' 
+      });
+    }
+
     // Update registration status
     registration.registration_status = 'cancelled';
     registration.cancelled_at = new Date();
+    registration.updatedAt = new Date();
+    
     await registration.save();
 
     // Update session registrations
@@ -551,11 +600,61 @@ exports.cancelRegistration = async (req, res) => {
       { registration_id: registration._id },
       { 
         status: 'cancelled',
-        cancelled_at: new Date()
+        cancelled_at: new Date(),
+        updatedAt: new Date()
       }
     );
 
-    res.json({ message: 'Registrasi berhasil dibatalkan' });
+    console.log('Registration cancelled successfully:', registration._id);
+
+    res.json({ 
+      message: 'Registrasi berhasil dibatalkan',
+      registration: registration
+    });
+    
+  } catch (err) {
+    console.error('cancelRegistration error:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+// Get registration with detailed status (helper method)
+exports.getRegistrationStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    const registration = await Registration.findOne({
+      _id: id,
+      user_id: userId
+    })
+    .populate('event_id', 'name description')
+    .populate('user_id', 'name email');
+
+    if (!registration) {
+      return res.status(404).json({ message: 'Registrasi tidak ditemukan' });
+    }
+
+    const sessionRegistrations = await SessionRegistration.find({
+      registration_id: registration._id
+    }).populate('session_id', 'title date start_time end_time location speaker session_fee');
+
+    // Add status info
+    const statusInfo = {
+      can_cancel: ['draft', 'registered'].includes(registration.registration_status),
+      can_reupload: registration.payment_status === 'rejected',
+      can_view_qr: registration.registration_status === 'confirmed',
+      is_paid_event: registration.payment_amount > 0,
+      refund_policy: 'Uang yang sudah dibayar tidak dapat dikembalikan'
+    };
+
+    res.json({
+      ...registration.toObject(),
+      session_registrations: sessionRegistrations,
+      status_info: statusInfo
+    });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

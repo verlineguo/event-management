@@ -236,7 +236,9 @@
 
 
     <script>
-        document.getElementById('payment_proof').addEventListener('change', function(e) {
+       const paymentProofElement = document.getElementById('payment_proof');
+    if (paymentProofElement) {
+        paymentProofElement.addEventListener('change', function(e) {
             const file = e.target.files[0];
             const preview = document.getElementById('filePreview');
             const fileName = preview.querySelector('.file-name');
@@ -248,13 +250,17 @@
                 uploadLabel.style.display = 'none';
             }
         });
+    }
 
         function removeFile() {
-            document.getElementById('payment_proof').value = '';
+        const paymentProofElement = document.getElementById('payment_proof');
+        if (paymentProofElement) {
+            paymentProofElement.value = '';
             document.getElementById('filePreview').style.display = 'none';
             document.querySelector('.upload-label').style.display = 'block';
         }
-
+    }
+    
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(function() {
                 // Show temporary success message

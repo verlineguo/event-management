@@ -97,16 +97,15 @@ Route::prefix('committee')
             Route::post('/event/scan-qr', 'processScan')->name('committee.event.process-scan');
             Route::post('/event/manual', 'manualCheckIn')->name('committee.event.process-manual');
             Route::get('/attendance/session/{id}', 'sessionAttendance')->name('committee.attendance.session');
-            
+            Route::get('/participants/{id}/details', 'participantDetails')->name('committee.participant.details');
         });
         Route::controller(CertificateController::class)->group(function () {
-            
             Route::post('/attendance/session/{id}/upload-certificate', 'uploadCertificate')->name('committee.attendance.upload-certificate');
             Route::post('/attendance/session/{id}/bulk-upload-certificates', 'bulkUploadCertificates')->name('committee.attendance.bulk-upload-certificates');
             Route::get('certificate/download/{id}', 'downloadCertificate')->name('committee.certificate.download');
             Route::delete('certificate/revoke/{id}', 'revokeCertificate')->name('committee.certificate.revoke');
 
-            Route::get('/attendance/{sessionId}/export',  'exportAttendance')->name('committee.attendance.export');
+            Route::get('/attendance/{sessionId}/export', 'exportAttendance')->name('committee.attendance.export');
         });
     });
 
@@ -129,6 +128,7 @@ Route::prefix('member')
             Route::get('/registrations', 'myRegistrations')->name('member.myRegistrations.index');
             Route::get('/registrations/{id}/qr-codes', 'showQRCodes')->name('member.myRegistrations.qr-codes');
             Route::patch('/registrations/{id}/cancel', 'cancelRegistration')->name('member.myRegistrations.cancel');
+            Route::post('/registrations/{id}/reupload-payment',  'reuploadPayment')->name('member.myRegistrations.reupload-payment');
             Route::get('/registrations/{id}/payment-proof', 'downloadPaymentProof')->name('member.myRegistrations.payment-proof');
             Route::post('/registration-draft/{id}', 'saveDraftRegistration')->name('member.registration-draft.save');
             Route::get('/registration-draft/{id}', 'getDraft')->name('member.registration-draft.get');
@@ -144,14 +144,10 @@ Route::prefix('member')
 Route::prefix('guest')->group(function () {
     Route::controller(GuestMainController::class)->group(function () {
         Route::get('/home', 'index')->name('guest.home');
-                    Route::get('/events', 'events')->name('guest.events.index');
-
-                    Route::get('/events/{id}', 'showEvent')->name('guest.events.show');
-
-    });
-    Route::controller(MemberMainController::class)->group(function () {
         Route::get('/event', 'events')->name('guest.events');
+        Route::get('/events/{id}', 'showEvent')->name('guest.events.show');
     });
+    
 });
 
 Route::get('/check-session', function () {

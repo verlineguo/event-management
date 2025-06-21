@@ -2,22 +2,59 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('guest/css/event.css') }}">
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 @endsection
 
 @section('content')
     <div class="registration-container">
         <!-- Success Header -->
         <div class="header">
-            <h1 class="title">Registrasi Berhasil!</h1>
+            <h1 class="title">
+                @if(($registration['payment_status'] ?? '') === 'rejected')
+                    <i class="bx bx-x-circle" style="color: #dc3545;"></i>
+                    Pembayaran Ditolak
+                @else
+                    <i class="bx bx-check-circle" style="color: #28a745;"></i>
+                    Registrasi Berhasil!
+                @endif
+            </h1>
             <p class="subtitle">
-                @if(($registration['payment_amount'] ?? 0) > 0)
+                @if(($registration['payment_status'] ?? '') === 'rejected')
+                    Maaf, pembayaran Anda ditolak. Silakan upload ulang bukti pembayaran yang valid.
+                @elseif(($registration['payment_amount'] ?? 0) > 0)
                     Terima kasih! Registrasi Anda telah berhasil disubmit. Silakan tunggu verifikasi pembayaran dari tim kami.
                 @else
                     Selamat! Anda telah berhasil terdaftar untuk event ini.
                 @endif
             </p>
         </div>
+
+        <!-- Rejection Reason (if payment rejected) -->
+        @if(($registration['payment_status'] ?? '') === 'rejected' && !empty($registration['rejection_reason']))
+            <div class="alert alert-danger">
+                <h4><i class="bx bx-info-circle"></i> Alasan Penolakan:</h4>
+                <p>{{ $registration['rejection_reason'] }}</p>
+            </div>
+        @endif
+
+        <!-- Upload Ulang Section (if payment rejected) -->
+        @if(($registration['payment_status'] ?? '') === 'rejected')
+            <div class="upload-section">
+                <h4><i class="bx bx-upload"></i> Upload Ulang Bukti Pembayaran</h4>
+                <form action="{{ route('member.myRegistrations.reupload-payment', $registration['_id']) }}" method="POST" enctype="multipart/form-data" id="reuploadForm">
+                    @csrf
+                    <div class="form-group">
+                        <label for="payment_proof">Bukti Pembayaran Baru</label>
+                        <input type="file" name="payment_proof" id="payment_proof" accept="image/*,application/pdf" required>
+                        <small class="text-muted">Format: JPG, PNG, PDF. Maksimal 2MB</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bx bx-upload"></i>
+                        Upload Ulang
+                    </button>
+                </form>
+            </div>
+        @endif
 
         <!-- Registration Details -->
         <div class="registration-details">
@@ -53,7 +90,6 @@
             <div class="detail-row">
                 <span class="detail-label">
                     <i class="bx bx-location-plus"></i>
-                    
                     Lokasi
                 </span>
                 <span class="detail-value">{{ $event['display_location'] ?? 'Location' }}</span>
@@ -88,12 +124,16 @@
                 </span>
                 <span class="detail-value">
                     @php
-                        $status = $registration['status'] ?? 'pending';
+                        $status = $registration['registration_status'] ?? 'pending';
+                        $paymentStatus = $registration['payment_status'] ?? 'pending';
                         $statusClass = 'status-pending';
                         $statusText = 'Menunggu Verifikasi';
                         
-                        if ($status === 'confirmed') {
-                            $statusClass = 'status-confirmed';
+                        if ($paymentStatus === 'rejected') {
+                            $statusClass = 'status-rejected';
+                            $statusText = 'Pembayaran Ditolak';
+                        } elseif ($status === 'confirmed') {
+                            $statusClass = 'status-confirmed';  
                             $statusText = 'Terkonfirmasi';
                         } elseif ($status === 'cancelled') {
                             $statusClass = 'status-cancelled';
@@ -116,7 +156,28 @@
         </div>
 
         <!-- Next Steps -->
-        @if(($registration['payment_amount'] ?? 0) > 0 && ($registration['status'] ?? 'pending') === 'pending')
+        @if(($registration['payment_status'] ?? '') === 'rejected')
+            <div class="next-steps">
+                <h4>
+                    <i class="bx bx-exclamation-triangle"></i>
+                    Langkah Selanjutnya
+                </h4>
+                <ol class="steps-list">
+                    <li>
+                        <span class="step-number">1</span>
+                        <span>Upload ulang bukti pembayaran yang valid menggunakan form di atas</span>
+                    </li>
+                    <li>
+                        <span class="step-number">2</span>
+                        <span>Pastikan bukti pembayaran jelas dan sesuai dengan jumlah yang harus dibayar</span>
+                    </li>
+                    <li>
+                        <span class="step-number">3</span>
+                        <span>Tim kami akan memverifikasi ulang dalam waktu 1x24 jam</span>
+                    </li>
+                </ol>
+            </div>
+        @elseif(($registration['payment_amount'] ?? 0) > 0 && ($registration['registration_status'] ?? 'pending') === 'registered')
             <div class="next-steps">
                 <h4>
                     <i class="bx bx-list-check"></i>
@@ -141,7 +202,7 @@
                     </li>
                 </ol>
             </div>
-        @elseif(($registration['status'] ?? 'pending') === 'confirmed')
+        @elseif(($registration['registration_status'] ?? 'pending') === 'confirmed')
             <div class="next-steps">
                 <h4>
                     <i class="bx bx-party-horn"></i>
@@ -192,11 +253,19 @@
                 Lihat Detail Registrasi
             </a>
 
-            @if(($registration['status'] ?? 'pending') === 'confirmed' || ($registration['payment_amount'] ?? 0) == 0)
+            @if(($registration['registration_status'] ?? 'pending') === 'confirmed' || ($registration['payment_amount'] ?? 0) == 0)
                 <a href="{{ route('member.myRegistrations.qr-codes', $registration['_id']) }}" class="btn btn-success">
-                    <i class="bx bx-qrcode"></i>
+                    <i class="bx bx-qrcode"></i>  
                     Lihat QR Code
                 </a>
+            @endif
+
+            <!-- Cancel Button (only if not confirmed and not already cancelled) -->
+            @if(($registration['registration_status'] ?? '') !== 'confirmed' && ($registration['registration_status'] ?? '') !== 'cancelled')
+                <button type="button" class="btn btn-danger" onclick="cancelRegistration('{{ $registration['_id'] }}')">
+                    <i class="bx bx-x"></i>
+                    Batalkan Registrasi
+                </button>
             @endif
 
             <a href="{{ route('member.myRegistrations.index') }}" class="btn btn-outline">
@@ -210,4 +279,217 @@
             </a>
         </div>
     </div>
+
+    <style>
+    .upload-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #dc3545;
+    }
+
+    .upload-section h4 {
+        color: #dc3545;
+        margin-bottom: 15px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+
+    .form-group input[type="file"] {
+        width: 100%;
+        padding: 8px;
+        border: 2px dashed #ddd;
+        border-radius: 4px;
+        background: white;
+    }
+
+    .alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    .status-rejected {
+        background: #dc3545;
+        color: white;
+    }
+    </style>
+@endsection
+
+@section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Handle reupload form
+        document.getElementById('reuploadForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            Swal.fire({
+                title: 'Upload Bukti Pembayaran',
+                text: 'Apakah Anda yakin ingin mengupload ulang bukti pembayaran?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Upload!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Mengupload...',
+                        text: 'Mohon tunggu sebentar',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Submit form
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: 'Bukti pembayaran berhasil diupload ulang. Tim kami akan memverifikasi dalam 1x24 jam.',
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: data.message || 'Terjadi kesalahan saat mengupload',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan sistem',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+                }
+            });
+        });
+
+        // Cancel Registration Function
+        function cancelRegistration(registrationId) {
+            Swal.fire({
+                title: 'Batalkan Registrasi?',
+                html: `
+                    <p>Apakah Anda yakin ingin membatalkan registrasi ini?</p>
+                    <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                        <small style="color: #856404;">
+                            <i class="bx bx-info-circle"></i>
+                            <strong>Perhatian:</strong> Uang yang sudah dibayar TIDAK akan dikembalikan.
+                        </small>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Batalkan!',
+                cancelButtonText: 'Tidak'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Membatalkan...',
+                        text: 'Mohon tunggu sebentar',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Submit cancel request
+                    fetch(`/member/registrations/${registrationId}/cancel`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                title: 'Dibatalkan!',
+                                text: 'Registrasi Anda telah dibatalkan.',
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                window.location.href = '/member/registrations';
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: data.message || 'Gagal membatalkan registrasi',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan sistem',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+                }
+            });
+        }
+
+        // Show success message if any
+        @if(session('success'))
+            Swal.fire({
+                title: 'Berhasil!',
+                text: '{{ session('success') }}',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        @endif
+
+        // Show error message if any
+        @if($errors->any())
+            Swal.fire({
+                title: 'Error!',
+                text: '{{ $errors->first() }}',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        @endif
+    </script>
 @endsection

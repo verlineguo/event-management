@@ -108,24 +108,6 @@
         color: #2c3e50;
         }
 
-        .next-session-info {
-        background: #f8f9fa;
-        border-left: 4px solid #007bff;
-        padding: 12px;
-        margin: 15px 0;
-        border-radius: 0 8px 8px 0;
-        }
-
-        .next-session-info h4 {
-        margin: 0 0 8px 0;
-        color: #007bff;
-        font-size: 0.9rem;
-        font-weight: 600;
-        }
-
-        .session-details {
-        font-size: 0.85rem;
-        }
 
         .session-details strong {
         color: #2c3e50;
@@ -275,73 +257,7 @@
         color: #2c3e50;
         }
 
-        .next-session-info {
-        background: #f8f9fa;
-        border-left: 4px solid #007bff;
-        padding: 12px;
-        margin: 15px 0;
-        border-radius: 0 8px 8px 0;
-        }
-
-        .next-session-info h4 {
-        margin: 0 0 8px 0;
-        color: #007bff;
-        font-size: 0.9rem;
-        font-weight: 600;
-        }
-
-        .session-details {
-        font-size: 0.85rem;
-        }
-
-        .session-details strong {
-        color: #2c3e50;
-        display: block;
-        margin-bottom: 5px;
-        }
-
-        .session-details small {
-        color: #666;
-        line-height: 1.4;
-        }
-
-        .availability-status {
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin: 10px 0;
-        text-align: center;
-        }
-
-        .availability-status.available {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-        }
-
-        .availability-status.almost-full {
-        background: #fff3cd;
-        color: #856404;
-        border: 1px solid #ffeaa7;
-        }
-
-        .availability-status.full {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-        }
-
-        .availability-status.no-sessions {
-        background: #e2e3e5;
-        color: #383d41;
-        border: 1px solid #d6d8db;
-        }
-
-        .btn-register-event.urgent {
-        background: linear-gradient(45deg, #ff6b35, #f7931e);
-        animation: glow 2s ease-in-out infinite alternate;
-        }
+   
 
         @keyframes glow {
         from {

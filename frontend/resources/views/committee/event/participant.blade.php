@@ -424,6 +424,274 @@
                 $('#sessionDetailsModal').modal('show');
             });
 
+
+            $('.participant-details-btn').on('click', function() {
+        const participantId = $(this).data('id');
+        
+        // Show loading state
+        $('#participantDetailsContent').html(`
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading participant details...</p>
+            </div>
+        `);
+        
+        // Show modal
+        $('#participantDetailsModal').modal('show');
+        
+        // Fetch participant details
+        $.ajax({
+            url: `/committee/participants/${participantId}/details`,
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    renderParticipantDetails(response.data);
+                } else {
+                    showError(response.message || 'Failed to load details');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error:', xhr);
+                let errorMessage = 'Failed to load participant details';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                showError(errorMessage);
+            }
+        });
+    });
+    
+    function renderParticipantDetails(data) {
+        const participant = data.participant;
+        const sessions = data.sessions || [];
+        const attendanceHistory = data.attendance_history || [];
+        
+        // Calculate attendance stats
+        const totalSessions = sessions.length;
+        const attendedSessions = attendanceHistory.filter(a => a.attended).length;
+        const attendanceRate = totalSessions > 0 ? Math.round((attendedSessions / totalSessions) * 100) : 0;
+        
+        const html = `
+            <!-- Participant Info -->
+            <div class="row mb-4">
+                <div class="col-md-3 text-center">
+                    <div class="avatar avatar-xl mx-auto mb-3">
+                        <span class="avatar-initial rounded-circle bg-label-primary fs-2">
+                            ${participant.user_id.name.charAt(0).toUpperCase()}
+                        </span>
+                    </div>
+                    <h5 class="mb-1">${participant.user_id.name}</h5>
+                    <p class="text-muted">${participant.user_id.email}</p>
+                    ${participant.user_id.phone ? `<p class="text-muted"><i class="bx bx-phone me-1"></i>${participant.user_id.phone}</p>` : ''}
+                </div>
+                <div class="col-md-9">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Registration Status</h6>
+                            <span class="badge bg-${getStatusColor(participant.registration_status)} mb-3">
+                                ${participant.registration_status.toUpperCase()}
+                            </span>
+                            
+                            <h6>Payment Status</h6>
+                            <span class="badge bg-${getPaymentStatusColor(participant.payment_status)} mb-3">
+                                ${participant.payment_status.toUpperCase()}
+                            </span>
+                            
+                            ${participant.payment_amount ? `
+                            <h6>Payment Amount</h6>
+                            <p class="mb-3">Rp ${number_format(participant.payment_amount)}</p>
+                            ` : ''}
+                            
+                            <h6>Registration Date</h6>
+                            <p class="mb-3">${formatDateTime(participant.createdAt)}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Attendance Overview</h6>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="progress me-3" style="width: 100px; height: 8px;">
+                                    <div class="progress-bar bg-success" style="width: ${attendanceRate}%"></div>
+                                </div>
+                                <span class="text-muted">${attendedSessions}/${totalSessions} sessions (${attendanceRate}%)</span>
+                            </div>
+                            
+                            ${participant.payment_verified_by ? `
+                            <h6>Payment Verified By</h6>
+                            <p class="mb-2">${participant.payment_verified_by.name}</p>
+                            <small class="text-muted">${formatDateTime(participant.payment_verified_at)}</small>
+                            ` : ''}
+                            
+                            ${participant.rejection_reason ? `
+                            <h6 class="text-danger">Rejection Reason</h6>
+                            <p class="text-danger">${participant.rejection_reason}</p>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payment Proof -->
+            ${participant.payment_proof_url ? `
+            <div class="mb-4">
+                <h6>Payment Proof</h6>
+                <div class="card">
+                    <div class="card-body text-center">
+                        <img src="${participant.payment_proof_url}" 
+                             class="img-fluid rounded" 
+                             style="max-height: 300px; cursor: pointer;"
+                             onclick="window.open('${participant.payment_proof_url}', '_blank')">
+                        <p class="mt-2 mb-0">
+                            <small class="text-muted">Click to view full size</small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Session Registrations -->
+            ${sessions.length > 0 ? `
+            <div class="mb-4">
+                <h6>Registered Sessions (${sessions.length})</h6>
+                <div class="row">
+                    ${sessions.map(session => `
+                        <div class="col-md-6 mb-3">
+                            <div class="card border">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="card-title mb-1">${session.session_id.title}</h6>
+                                            <p class="text-muted small mb-1">
+                                                <i class="bx bx-calendar me-1"></i>
+                                                ${formatDate(session.session_id.date)}
+                                            </p>
+                                            <p class="text-muted small mb-1">
+                                                <i class="bx bx-time me-1"></i>
+                                                ${session.session_id.start_time} - ${session.session_id.end_time}
+                                            </p>
+                                            <p class="text-muted small mb-0">
+                                                <i class="bx bx-map me-1"></i>
+                                                ${session.session_id.location}
+                                            </p>
+                                        </div>
+                                        <div class="text-end">
+                                            ${session.attendance ? `
+                                                <span class="badge bg-success mb-1">Attended</span>
+                                                <br>
+                                                <small class="text-muted">
+                                                    ${formatDateTime(session.attendance.check_in_time)}
+                                                </small>
+                                            ` : `
+                                                <span class="badge bg-warning">Not Attended</span>
+                                            `}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Attendance History -->
+            ${attendanceHistory.length > 0 ? `
+            <div class="mb-4">
+                <h6>Attendance History</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Session</th>
+                                <th>Check-in Time</th>
+                                <th>Method</th>
+                                <th>Scanned By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${attendanceHistory.map(attendance => `
+                                <tr>
+                                    <td>${attendance.session_id.title}</td>
+                                    <td>${formatDateTime(attendance.check_in_time)}</td>
+                                    <td>
+                                        <span class="badge bg-${attendance.attendance_method === 'qr_scan' ? 'info' : 'secondary'}">
+                                            ${attendance.attendance_method === 'qr_scan' ? 'QR Scan' : 'Manual'}
+                                        </span>
+                                    </td>
+                                    <td>${attendance.scanned_by ? attendance.scanned_by.name : '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            ` : ''}
+        `;
+        
+        $('#participantDetailsContent').html(html);
+    }
+    
+    function showError(message) {
+        $('#participantDetailsContent').html(`
+            <div class="text-center py-4">
+                <i class="bx bx-error-circle text-danger" style="font-size: 3rem;"></i>
+                <h5 class="mt-3 text-danger">Error</h5>
+                <p class="text-muted">${message}</p>
+                <button class="btn btn-outline-secondary" onclick="$('#participantDetailsModal').modal('hide')">
+                    Close
+                </button>
+            </div>
+        `);
+    }
+    
+    // Helper functions
+    function getStatusColor(status) {
+        const colors = {
+            'confirmed': 'success',
+            'registered': 'info',
+            'cancelled': 'danger',
+            'draft': 'warning'
+        };
+        return colors[status] || 'secondary';
+    }
+    
+    function getPaymentStatusColor(status) {
+        const colors = {
+            'approved': 'success',
+            'rejected': 'danger',
+            'pending': 'warning'
+        };
+        return colors[status] || 'secondary';
+    }
+    
+    function formatDateTime(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+    
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    }
+    
+    function number_format(number) {
+        return new Intl.NumberFormat('id-ID').format(number);
+    }
             // Success/Error messages
             @if (session('success'))
                 Swal.fire({

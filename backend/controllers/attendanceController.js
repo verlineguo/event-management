@@ -551,4 +551,102 @@ exports.getEventParticipants = async (req, res) => {
 };
 
 
+exports.getParticipantDetails = async (req, res) => {
+  try {
+    const { participantId } = req.params;
+
+    // Validate participant ID
+    if (!participantId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Participant ID is required'
+      });
+    }
+
+    // Get participant (registration) data
+    const participant = await Registration.findById(participantId)
+      .populate('user_id', 'name email phone profile')
+      .populate('event_id', 'name description')
+      .populate('payment_verified_by', 'name email');
+
+    if (!participant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Participant not found'
+      });
+    }
+
+    // Get session registrations
+    const sessionRegistrations = await SessionRegistration.find({
+      registration_id: participant._id
+    })
+    .populate('session_id', 'title description date start_time end_time location speaker')
+    .sort({ 'session_id.date': 1 });
+
+    // Get attendance history
+    const attendanceHistory = await Attendance.find({
+      user_id: participant.user_id._id,
+      session_id: { $in: sessionRegistrations.map(sr => sr.session_id._id) }
+    })
+    .populate('session_id', 'title date start_time end_time')
+    .populate('scanned_by', 'name')
+    .sort({ check_in_time: -1 });
+
+    // Add attendance info to session registrations
+    const sessionsWithAttendance = sessionRegistrations.map(sessionReg => {
+      const attendance = attendanceHistory.find(att => 
+        att.session_id._id.toString() === sessionReg.session_id._id.toString()
+      );
+      
+      return {
+        ...sessionReg.toObject(),
+        attendance: attendance ? {
+          attended: attendance.attended,
+          check_in_time: attendance.check_in_time,
+          attendance_method: attendance.attendance_method,
+          scanned_by: attendance.scanned_by
+        } : null
+      };
+    });
+
+    // Get certificates (if any)
+    const certificates = await Certificate.find({
+      user_id: participant.user_id._id,
+      session_id: { $in: sessionRegistrations.map(sr => sr.session_id._id) },
+      status: 'issued'
+    })
+    .populate('session_id', 'title')
+    .sort({ issued_date: -1 });
+
+    // Prepare response data
+    const responseData = {
+      participant: participant.toObject(),
+      sessions: sessionsWithAttendance,
+      attendance_history: attendanceHistory,
+      certificates: certificates,
+      stats: {
+        total_sessions: sessionRegistrations.length,
+        attended_sessions: attendanceHistory.filter(a => a.attended).length,
+        total_certificates: certificates.length,
+        attendance_rate: sessionRegistrations.length > 0 
+          ? Math.round((attendanceHistory.filter(a => a.attended).length / sessionRegistrations.length) * 100)
+          : 0
+      }
+    };
+
+    res.json({
+      success: true,
+      data: responseData
+    });
+
+  } catch (err) {
+    console.error('Error getting participant details:', err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+
 

@@ -1,4 +1,4 @@
-@extends('member.layouts.app')
+@extends('guest.layouts.app')
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('guest/css/event.css') }}">
@@ -214,7 +214,7 @@
 
                                     <!-- Action Buttons -->
                                     <div class="event-actions">
-                                        <a href="{{ route('member.events.show', $event['id']) }}"
+                                        <a href="{{ route('guest.events.show', $event['id']) }}"
                                             class="btn-view-details">
                                             <i class="fas fa-eye"></i> Details
                                         </a>

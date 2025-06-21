@@ -120,12 +120,7 @@ class AttendanceController extends Controller
     ]);
 
     try {
-        // Add debugging
-        Log::info('Processing QR scan:', [
-            'qr_token' => $request->qr_token,
-            'event_id' => $request->event_id,
-            'scanned_by' => session('user_id')
-        ]);
+   
 
         // Send scan request to Node.js API
         $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/attendance/scan-qr', [
@@ -234,29 +229,38 @@ class AttendanceController extends Controller
      * Get participant details
      */
     public function participantDetails($participantId)
-    {
-        try {
-            $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/participants/' . $participantId);
-
-            if ($response->successful()) {
-                return response()->json($response->json());
-            } else {
-                return response()->json(
-                    [
-                        'error' => 'Gagal mengambil detail peserta',
-                    ],
-                    404,
-                );
-            }
-        } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'error' => 'Terjadi kesalahan: ' . $e->getMessage(),
-                ],
-                500,
-            );
+{
+    try {
+        // Get participant details from API
+        $response = Http::withToken(session('jwt_token'))
+            ->get($this->apiUrl . '/participants/' . $participantId . '/details');
+        dd($response->json());
+        if ($response->successful()) {
+            $data = $response->json();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+        } else {
+            $error = $response->json();
+            return response()->json([
+                'success' => false,
+                'message' => $error['message'] ?? 'Failed to get participant details'
+            ], $response->status());
         }
+    } catch (\Exception $e) {
+        Log::error('Participant Details Error:', [
+            'participant_id' => $participantId,
+            'error' => $e->getMessage()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Calculate statistics for participants

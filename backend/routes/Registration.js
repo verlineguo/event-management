@@ -21,7 +21,7 @@ router.get('/:id/qr-codes', authenticateToken, registrationController.getQRCodes
 router.post('/draft', authenticateToken, registrationController.saveDraft);
 router.get('/draft/:id',authenticateToken, registrationController.getDraft);
 router.delete('/draft/:id',authenticateToken, registrationController.deleteDraft);
-
+router.post('/:id/reupload-payment', authenticateToken, registrationController.reuploadPayment);
 // Cancel registration (before confirmation)
 router.patch('/:id/cancel', authenticateToken, registrationController.cancelRegistration);
 

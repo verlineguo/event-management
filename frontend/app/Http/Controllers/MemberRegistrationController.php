@@ -155,19 +155,23 @@ class MemberRegistrationController extends Controller
                     ->route('member.events.register', $id)
                     ->withErrors(['message' => 'Data registrasi tidak ditemukan']);
             }
+$paymentAmount = $registrationData['payment_amount'] ?? 0;
+        
+        if ($paymentAmount > 0) {
+            // Event berbayar - require payment proof
+            $request->validate([
+                'payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            ]);
 
-            // If event has fee, require payment proof
-            if (($registrationData['payment_amount'] ?? 0) > 0) {
-                $request->validate([
-                    'payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
-                ]);
-
-                // Upload payment proof
-                if ($request->hasFile('payment_proof')) {
-                    $paymentProofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
-                    $registrationData['payment_proof_url'] = $paymentProofPath;
-                }
+            // Upload payment proof
+            if ($request->hasFile('payment_proof')) {
+                $paymentProofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
+                $registrationData['payment_proof_url'] = $paymentProofPath;
             }
+        } else {
+            // Event gratis - tidak perlu payment proof
+            $registrationData['payment_proof_url'] = null;
+        }
 
             $response = Http::withToken(session('jwt_token'))->post($this->apiUrl . '/registrations', $registrationData);
             if ($response->successful()) {
@@ -193,6 +197,74 @@ class MemberRegistrationController extends Controller
                 ->withInput();
         }
     }
+
+    public function reuploadPayment(Request $request, $registrationId)
+{
+    try {
+        $request->validate([
+            'payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
+
+        // Check if registration exists and belongs to user
+        $checkResponse = Http::withToken(session('jwt_token'))
+            ->get($this->apiUrl . '/registrations/' . $registrationId);
+            
+        if (!$checkResponse->successful()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Registrasi tidak ditemukan'
+            ], 404);
+        }
+
+        $registration = $checkResponse->json();
+        
+        // Check if payment was actually rejected
+        if (($registration['payment_status'] ?? '') !== 'rejected') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pembayaran tidak dalam status ditolak'
+            ], 400);
+        }
+
+        // Upload new payment proof
+        if ($request->hasFile('payment_proof')) {
+            $paymentProofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
+            
+            $updateData = [
+                'payment_proof_url' => $paymentProofPath,
+                'payment_status' => 'pending'
+            ];
+
+            $response = Http::withToken(session('jwt_token'))
+                ->patch($this->apiUrl . '/registrations/' . $registrationId . '/reupload-payment', $updateData);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Bukti pembayaran berhasil diupload ulang'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupdate bukti pembayaran'
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'File bukti pembayaran tidak ditemukan'
+        ], 400);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+
 
     /**
      * Show registration success page
@@ -460,20 +532,46 @@ class MemberRegistrationController extends Controller
      * Cancel registration
      */
     public function cancelRegistration($id)
-    {
-        try {
-            $response = Http::withToken(session('jwt_token'))->patch($this->apiUrl . '/registrations/' . $id . '/cancel');
+{
+    try {
+        $response = Http::withToken(session('jwt_token'))
+            ->patch($this->apiUrl . '/registrations/' . $id . '/cancel');
 
-            if ($response->successful()) {
-                return redirect()->route('member.registrations.index')->with('success', 'Registrasi berhasil dibatalkan');
+        if ($response->successful()) {
+            // Check if request expects JSON (AJAX)
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registrasi berhasil dibatalkan'
+                ]);
             }
-
-            $error = $response->json()['message'] ?? 'Gagal membatalkan registrasi';
-            return back()->withErrors(['message' => $error]);
-        } catch (\Exception $e) {
-            return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+            
+            return redirect()->route('member.myRegistrations.index')
+                ->with('success', 'Registrasi berhasil dibatalkan');
         }
+
+        $error = $response->json()['message'] ?? 'Gagal membatalkan registrasi';
+        
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => $error
+            ], 400);
+        }
+        
+        return back()->withErrors(['message' => $error]);
+        
+    } catch (\Exception $e) {
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+        
+        return back()->withErrors(['message' => 'Terjadi kesalahan: ' . $e->getMessage()]);
     }
+}
 
     /**
      * Download payment proof

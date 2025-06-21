@@ -335,7 +335,7 @@ class MemberMainController extends Controller
             'category_id' => $eventData['category_id'] ?? ['name' => 'General'],
             'category' => $this->extractCategory($eventData),
 
-            // Status and availability
+            // Status and availability - PERBAIKAN: pastikan data dari backend benar
             'status' => $eventData['status'] ?? 'open',
             'is_full' => $eventData['is_full'] ?? false,
             'available_slots' => $eventData['available_slots'] ?? 0,
@@ -344,14 +344,14 @@ class MemberMainController extends Controller
             'date_range' => $this->getDateRangeFromSessions($sessionDates),
             'display_date' => $this->getDisplayDateFromSessions($sessionDates),
 
-            // Sessions
+            // Sessions - PERBAIKAN: pastikan transformasi session benar
             'sessions' => $this->transformSessionsForDetailView($sessions),
             'sessions_count' => count($sessions),
 
-            // Participants info
+            // Participants info - PERBAIKAN: gunakan data yang sudah dihitung backend
             'registered_count' => $eventData['registered_count'] ?? 0,
             'max_participants' => $eventData['max_participants'] ?? 0,
-            'quota_percentage' => $eventData['max_participants'] > 0 ? (($eventData['registered_count'] ?? 0) / $eventData['max_participants']) * 100 : 0,
+            'quota_percentage' => $eventData['quota_percentage'] ?? 0,
 
             // Fees
             'min_fee' => $sessionFees->min() ?? 0,
@@ -369,7 +369,7 @@ class MemberMainController extends Controller
         ];
     }
 
-    // Transform sessions specifically for detail view
+    // PERBAIKAN: Transform sessions dengan data availability yang benar
     private function transformSessionsForDetailView($sessions)
     {
         return collect($sessions)
@@ -396,6 +396,7 @@ class MemberMainController extends Controller
                     'max_participants' => $session['max_participants'] ?? 0,
                     'session_order' => $session['session_order'] ?? $index + 1,
                     'status' => $session['status'] ?? 'scheduled',
+                    // PERBAIKAN: Gunakan data availability dari backend
                     'registered_count' => $session['registered_count'] ?? 0,
                     'available_slots' => $session['available_slots'] ?? 0,
                     'is_full' => $session['is_full'] ?? false,
@@ -405,6 +406,7 @@ class MemberMainController extends Controller
             })
             ->toArray();
     }
+
 
     // Calculate event duration
     private function calculateEventDuration($sessions)
