@@ -57,9 +57,13 @@ Route::prefix('finance')->middleware(['auth.jwt', 'role:finance'])->group(functi
         Route::get('/dashboard', 'index')->name('finance.dashboard');
     });
 
-    // Route::get('/profile', function () {
-    //     return view('finance.profile');
-    // })->name('profile');
+    Route::get('/profile', function () {
+        return view('finance.profile');
+    })->name('profile');
+
+    Route::middleware(['auth'])->group(function () {
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    });
 });
 
 
@@ -90,6 +94,14 @@ Route::prefix('committee')->middleware(['auth.jwt', 'role:committee'])->group(fu
         Route::get('/settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/settings/profile', [ProfileController::class, 'update'])->name('profile.update');
     });
+
+    Route::get('/profile', function () {
+        return view('committee.profile');
+    })->name('profile');
+
+    Route::middleware(['auth'])->group(function () {
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    });
 });
 
     Route::controller(EventController::class)->group( function() {
@@ -111,9 +123,13 @@ Route::prefix('member')->middleware(['auth.jwt', 'role:member'])->group(function
         Route::get('/home', action: 'index')->name('member.home');
     });
 
-    // Route::get('/profile', function () {
-    //     return view('member.profile');
-    // })->name('profile');
+    Route::get('/profile', function () {
+        return view('member.profile');
+    })->name('profile');
+
+    Route::middleware(['auth'])->group(function () {
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    });
 
 });
 
