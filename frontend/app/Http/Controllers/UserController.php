@@ -24,9 +24,10 @@ class UserController extends Controller
 
     public function create()
     {
-        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/roles');
+        $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/role');
         if ($response->successful()) {
             $roles = $response->json();
+            
             return view('admin.user.create', compact('roles'));
         }
         return back()->withErrors(['message' => 'Gagal mengambil data roles']);
@@ -75,7 +76,7 @@ class UserController extends Controller
 
     public function edit($id)
     {
-        $rolesResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/roles');
+        $rolesResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/role');
         $userResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . "/users/{$id}");
 
         if ($rolesResponse->successful() && $userResponse->successful()) {

@@ -15,6 +15,8 @@ const registrationRoutes = require('./routes/Registration');
 const paymentRoutes = require('./routes/Payment');
 const attendanceRoutes = require('./routes/Attendance');
 const certificateRoutes = require('./routes/Certificate');
+const dashboardRoutes = require('./routes/Dashboard');
+
 // CORS
 app.use(cors({
   origin: 'http://localhost:8000',
@@ -35,7 +37,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/auth_demo
 // Routes
 app.use('/api', authRoutes);
 app.use('/api/users', usersRouter);
-app.use('/api/roles', RolesRouter);
+app.use('/api/role', RolesRouter);
 app.use('/api/events', EventsRouter);
 app.use('/api/category', CategoryRouter);
 app.use('/api/member/events', memberEventRoutes);
@@ -43,5 +45,7 @@ app.use('/api/registrations', registrationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/certificate', certificateRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

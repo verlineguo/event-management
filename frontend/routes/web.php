@@ -12,6 +12,7 @@ use App\Http\Controllers\GuestMainController;
 use App\Http\Controllers\MemberMainController;
 use App\Http\Controllers\MemberRegistrationController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +55,15 @@ Route::prefix('admin')
             Route::get('/category/{id}/edit', 'edit')->name('admin.category.edit');
             Route::put('/category/{id}', 'update')->name('admin.category.update');
             Route::delete('/category/{id}', 'destroy')->name('admin.category.destroy');
+        });
+
+         Route::controller(RoleController::class)->group(function () {
+            Route::get('/role', 'index')->name('admin.role.index');
+            Route::get('/role/create', 'create')->name('admin.role.create');
+            Route::post('/role', 'store')->name('admin.role.store');
+            Route::get('/role/{id}/edit', 'edit')->name('admin.role.edit');
+            Route::put('/role/{id}', 'update')->name('admin.role.update');
+            Route::delete('/role/{id}', 'destroy')->name('admin.role.destroy');
         });
     });
 

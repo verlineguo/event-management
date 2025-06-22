@@ -62,7 +62,7 @@
     <ul class="menu-inner py-1">
         <!-- Dashboards -->
         <li class="menu-item active open">
-            <a href="javascript:void(0);" class="menu-link">
+            <a href="{{ route('admin.dashboard') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-smile"></i>
                 <div class="text-truncate" data-i18n="Dashboards">Dashboards</div>
             </a>
@@ -85,11 +85,18 @@
         <li class="menu-item">
             <a href="{{ route('admin.category.index') }}"
                 target="_blank" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-user"></i>
+                <i class="menu-icon tf-icons bx bx-category"></i>
                 <div class="text-truncate" data-i18n="Email">Categories</div>
             </a>
         </li>
-       
         
+        <li class="menu-item">
+            <a href="{{ route('admin.role.index') }}"
+                target="_blank" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-briefcase-alt-2"></i>
+                <div class="text-truncate" data-i18n="Email">Roles</div>
+            </a>
+        </li>
+
     </ul>
 </aside>
