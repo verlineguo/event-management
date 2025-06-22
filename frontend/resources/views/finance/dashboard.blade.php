@@ -1,24 +1,39 @@
 @extends('finance.layouts.app')
 @section('content')
     <div class="container-xxl flex-grow-1 container-p-y">
+        @if(session('warning'))
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {{ session('warning') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+        
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
         <div class="row">
             <div class="col-xxl-8 mb-6 order-0">
                 <div class="card">
                     <div class="d-flex align-items-start row">
                         <div class="col-sm-7">
                             <div class="card-body">
-                                <h5 class="card-title text-primary mb-3">Congratulations John! 🎉</h5>
+                                <h5 class="card-title text-primary mb-3">Selamat Datang Finance! 💰</h5>
                                 <p class="mb-6">
-                                    You have done 72% more sales today.<br />Check your new badge in your profile.
+                                    Dashboard finance untuk verifikasi pembayaran dan pengelolaan keuangan.<br />
+                                    {{ number_format($dashboardData['stats']['pendingPayments']) }} pembayaran menunggu verifikasi.
                                 </p>
-
-                                <a href="javascript:;" class="btn btn-sm btn-outline-primary">View Badges</a>
+                                <a href="{{ route('finance.payment.index') }}" class="btn btn-sm btn-outline-primary me-2">Verifikasi Pembayaran</a>
+                                <a href="{{ route('finance.payment.index') }}" class="btn btn-sm btn-outline-warning">Riwayat Pembayaran</a>
                             </div>
                         </div>
                         <div class="col-sm-5 text-center text-sm-left">
                             <div class="card-body pb-0 px-0 px-md-6">
                                 <img src="../assets/img/illustrations/man-with-laptop.png" height="175"
-                                    alt="View Badge User" />
+                                    alt="Finance Dashboard" />
                             </div>
                         </div>
                     </div>
@@ -31,7 +46,7 @@
                             <div class="card-body">
                                 <div class="card-title d-flex align-items-start justify-content-between mb-4">
                                     <div class="avatar flex-shrink-0">
-                                        <img src="../assets/img/icons/unicons/chart-success.png" alt="chart success"
+                                        <img src="../assets/img/icons/unicons/wallet-info.png" alt="pending payments"
                                             class="rounded" />
                                     </div>
                                     <div class="dropdown">
@@ -40,15 +55,16 @@
                                             <i class="icon-base bx bx-dots-vertical-rounded text-body-secondary"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                                            <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                                            <a class="dropdown-item" href="javascript:void(0);">Delete</a>
+                                            <a class="dropdown-item" href="#">Lihat Detail</a>
                                         </div>
                                     </div>
                                 </div>
-                                <p class="mb-1">Profit</p>
-                                <h4 class="card-title mb-3">$12,628</h4>
-                                <small class="text-success fw-medium"><i class="icon-base bx bx-up-arrow-alt"></i>
-                                    +72.80%</small>
+                                <p class="mb-1">Pending Payments</p>
+                                <h4 class="card-title mb-3">{{ number_format($dashboardData['stats']['pendingPayments']) }}</h4>
+                                <small class="text-warning fw-medium">
+                                    <i class="icon-base bx bx-time"></i>
+                                    Menunggu verifikasi
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -57,7 +73,7 @@
                             <div class="card-body">
                                 <div class="card-title d-flex align-items-start justify-content-between mb-4">
                                     <div class="avatar flex-shrink-0">
-                                        <img src="../assets/img/icons/unicons/wallet-info.png" alt="wallet info"
+                                        <img src="../assets/img/icons/unicons/chart-success.png" alt="approved payments"
                                             class="rounded" />
                                     </div>
                                     <div class="dropdown">
@@ -66,95 +82,79 @@
                                             <i class="icon-base bx bx-dots-vertical-rounded text-body-secondary"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt6">
-                                            <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                                            <a class="dropdown-item" href="javascript:void(0);">Delete</a>
+                                            <a class="dropdown-item" href="#">Lihat Detail</a>
                                         </div>
                                     </div>
                                 </div>
-                                <p class="mb-1">Sales</p>
-                                <h4 class="card-title mb-3">$4,679</h4>
-                                <small class="text-success fw-medium"><i class="icon-base bx bx-up-arrow-alt"></i>
-                                    +28.42%</small>
+                                <p class="mb-1">Approved Payments</p>
+                                <h4 class="card-title mb-3">{{ number_format($dashboardData['stats']['approvedPayments']) }}</h4>
+                                <small class="text-{{ $dashboardData['stats']['paymentGrowthPercentage'] >= 0 ? 'success' : 'danger' }} fw-medium">
+                                    <i class="icon-base bx bx-{{ $dashboardData['stats']['paymentGrowthPercentage'] >= 0 ? 'up' : 'down' }}-arrow-alt"></i>
+                                    {{ number_format(abs($dashboardData['stats']['paymentGrowthPercentage']), 1) }}%
+                                </small>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- Total Revenue -->
-            <div class="col-12 col-xxl-8 order-2 order-md-3 order-xxl-2 mb-6 total-revenue">
+        </div>
+        
+        <div class="row">
+            <!-- Payment Statistics -->
+            <div class="col-12 col-xxl-8 order-2 order-md-3 order-xxl-2 mb-6">
                 <div class="card">
                     <div class="row row-bordered g-0">
                         <div class="col-lg-8">
                             <div class="card-header d-flex align-items-center justify-content-between">
                                 <div class="card-title mb-0">
-                                    <h5 class="m-0 me-2">Total Revenue</h5>
-                                </div>
-                                <div class="dropdown">
-                                    <button class="btn p-0" type="button" id="totalRevenue" data-bs-toggle="dropdown"
-                                        aria-haspopup="true" aria-expanded="false">
-                                        <i class="icon-base bx bx-dots-vertical-rounded icon-lg text-body-secondary"></i>
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="totalRevenue">
-                                        <a class="dropdown-item" href="javascript:void(0);">Select All</a>
-                                        <a class="dropdown-item" href="javascript:void(0);">Refresh</a>
-                                        <a class="dropdown-item" href="javascript:void(0);">Share</a>
-                                    </div>
+                                    <h5 class="m-0 me-2">Statistik Pembayaran</h5>
                                 </div>
                             </div>
-                            <div id="totalRevenueChart" class="px-3"></div>
+                            <div class="card-body">
+                                <canvas id="paymentStatsChart" height="300"></canvas>
+                            </div>
                         </div>
                         <div class="col-lg-4">
                             <div class="card-body px-xl-9 py-12 d-flex align-items-center flex-column">
                                 <div class="text-center mb-6">
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-outline-primary">
-                                            <script>
-                                                document.write(new Date().getFullYear() - 1);
-                                            </script>
-                                        </button>
-                                        <button type="button"
-                                            class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split"
-                                            data-bs-toggle="dropdown" aria-expanded="false">
-                                            <span class="visually-hidden">Toggle Dropdown</span>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="javascript:void(0);">2021</a></li>
-                                            <li><a class="dropdown-item" href="javascript:void(0);">2020</a></li>
-                                            <li><a class="dropdown-item" href="javascript:void(0);">2019</a></li>
-                                        </ul>
+                                    <h6 class="mb-2">Payment Status</h6>
+                                    <div class="d-flex justify-content-center">
+                                        <canvas id="paymentStatusChart" width="150" height="150"></canvas>
                                     </div>
                                 </div>
 
-                                <div id="growthChart"></div>
-                                <div class="text-center fw-medium my-6">62% Company Growth</div>
-
-                                <div class="d-flex gap-11 justify-content-between">
+                                <div class="d-flex gap-11 justify-content-between w-100 flex-column">
                                     <div class="d-flex">
                                         <div class="avatar me-2">
-                                            <span class="avatar-initial rounded-2 bg-label-primary"><i
-                                                    class="icon-base bx bx-dollar icon-lg text-primary"></i></span>
+                                            <span class="avatar-initial rounded-2 bg-label-warning">
+                                                <i class="icon-base bx bx-time icon-lg text-warning"></i>
+                                            </span>
                                         </div>
                                         <div class="d-flex flex-column">
-                                            <small>
-                                                <script>
-                                                    document.write(new Date().getFullYear() - 1);
-                                                </script>
-                                            </small>
-                                            <h6 class="mb-0">$32.5k</h6>
+                                            <small>Pending</small>
+                                            <h6 class="mb-0">{{ number_format($dashboardData['stats']['pendingPayments']) }}</h6>
                                         </div>
                                     </div>
                                     <div class="d-flex">
                                         <div class="avatar me-2">
-                                            <span class="avatar-initial rounded-2 bg-label-info"><i
-                                                    class="icon-base bx bx-wallet icon-lg text-info"></i></span>
+                                            <span class="avatar-initial rounded-2 bg-label-success">
+                                                <i class="icon-base bx bx-check icon-lg text-success"></i>
+                                            </span>
                                         </div>
                                         <div class="d-flex flex-column">
-                                            <small>
-                                                <script>
-                                                    document.write(new Date().getFullYear() - 2);
-                                                </script>
-                                            </small>
-                                            <h6 class="mb-0">$41.2k</h6>
+                                            <small>Approved</small>
+                                            <h6 class="mb-0">{{ number_format($dashboardData['stats']['approvedPayments']) }}</h6>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex">
+                                        <div class="avatar me-2">
+                                            <span class="avatar-initial rounded-2 bg-label-danger">
+                                                <i class="icon-base bx bx-x icon-lg text-danger"></i>
+                                            </span>
+                                        </div>
+                                        <div class="d-flex flex-column">
+                                            <small>Rejected</small>
+                                            <h6 class="mb-0">{{ number_format($dashboardData['stats']['rejectedPayments']) }}</h6>
                                         </div>
                                     </div>
                                 </div>
@@ -163,15 +163,16 @@
                     </div>
                 </div>
             </div>
-            <!--/ Total Revenue -->
-            <div class="col-12 col-md-8 col-lg-12 col-xxl-4 order-3 order-md-2 profile-report">
+            
+            <!-- Revenue Stats -->
+            <div class="col-12 col-md-8 col-lg-12 col-xxl-4 order-3 order-md-2">
                 <div class="row">
-                    <div class="col-6 mb-6 payments">
+                    <div class="col-6 mb-6">
                         <div class="card h-100">
                             <div class="card-body">
                                 <div class="card-title d-flex align-items-start justify-content-between mb-4">
                                     <div class="avatar flex-shrink-0">
-                                        <img src="../assets/img/icons/unicons/paypal.png" alt="paypal"
+                                        <img src="../assets/img/icons/unicons/paypal.png" alt="revenue"
                                             class="rounded" />
                                     </div>
                                     <div class="dropdown">
@@ -180,24 +181,24 @@
                                             <i class="icon-base bx bx-dots-vertical-rounded text-body-secondary"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt4">
-                                            <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                                            <a class="dropdown-item" href="javascript:void(0);">Delete</a>
+                                            <a class="dropdown-item" href="#">Lihat Detail</a>
                                         </div>
                                     </div>
                                 </div>
-                                <p class="mb-1">Payments</p>
-                                <h4 class="card-title mb-3">$2,456</h4>
-                                <small class="text-danger fw-medium"><i class="icon-base bx bx-down-arrow-alt"></i>
-                                    -14.82%</small>
+                                <p class="mb-1">Total Revenue</p>
+                                <h4 class="card-title mb-3">Rp {{ number_format($dashboardData['stats']['totalRevenue']) }}</h4>
+                                <small class="text-success fw-medium">
+                                    Semua pembayaran
+                                </small>
                             </div>
                         </div>
                     </div>
-                    <div class="col-6 mb-6 transactions">
+                    <div class="col-6 mb-6">
                         <div class="card h-100">
                             <div class="card-body">
                                 <div class="card-title d-flex align-items-start justify-content-between mb-4">
                                     <div class="avatar flex-shrink-0">
-                                        <img src="../assets/img/icons/unicons/cc-primary.png" alt="Credit Card"
+                                        <img src="../assets/img/icons/unicons/cc-primary.png" alt="monthly revenue"
                                             class="rounded" />
                                     </div>
                                     <div class="dropdown">
@@ -206,309 +207,382 @@
                                             <i class="icon-base bx bx-dots-vertical-rounded text-body-secondary"></i>
                                         </button>
                                         <div class="dropdown-menu" aria-labelledby="cardOpt1">
-                                            <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                                            <a class="dropdown-item" href="javascript:void(0);">Delete</a>
+                                            <a class="dropdown-item" href="#">Lihat Detail</a>
                                         </div>
                                     </div>
                                 </div>
-                                <p class="mb-1">Transactions</p>
-                                <h4 class="card-title mb-3">$14,857</h4>
-                                <small class="text-success fw-medium"><i class="icon-base bx bx-up-arrow-alt"></i>
-                                    +28.14%</small>
+                                <p class="mb-1">Monthly Revenue</p>
+                                <h4 class="card-title mb-3">Rp {{ number_format($dashboardData['stats']['monthlyRevenue']) }}</h4>
+                                <small class="text-info fw-medium">
+                                    Bulan ini
+                                </small>
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 mb-6 profile-report">
+                    <div class="col-6 mb-6">
                         <div class="card h-100">
                             <div class="card-body">
-                                <div
-                                    class="d-flex justify-content-between align-items-center flex-sm-row flex-column gap-10 flex-wrap">
-                                    <div class="d-flex flex-sm-column flex-row align-items-start justify-content-between">
-                                        <div class="card-title mb-6">
-                                            <h5 class="text-nowrap mb-1">Profile Report</h5>
-                                            <span class="badge bg-label-warning">YEAR 2022</span>
-                                        </div>
-                                        <div class="mt-sm-auto">
-                                            <span class="text-success text-nowrap fw-medium"><i
-                                                    class="icon-base bx bx-up-arrow-alt"></i> 68.2%</span>
-                                            <h4 class="mb-0">$84,686k</h4>
-                                        </div>
+                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                    <div class="avatar flex-shrink-0">
+                                        <img src="../assets/img/icons/unicons/wallet-info.png" alt="today pending"
+                                            class="rounded" />
                                     </div>
-                                    <div id="profileReportChart"></div>
                                 </div>
+                                <p class="mb-1">Today's Pending</p>
+                                <h4 class="card-title mb-3">{{ number_format($dashboardData['stats']['todayPendingPayments']) }}</h4>
+                                <small class="text-warning fw-medium">
+                                    Hari ini
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                    <div class="avatar flex-shrink-0">
+                                        <img src="../assets/img/icons/unicons/chart-success.png" alt="today processed"
+                                            class="rounded" />
+                                    </div>
+                                </div>
+                                <p class="mb-1">Today's Processed</p>
+                                <h4 class="card-title mb-3">{{ number_format($dashboardData['stats']['todayProcessedPayments']) }}</h4>
+                                <small class="text-success fw-medium">
+                                    Hari ini
+                                </small>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        
         <div class="row">
-            <!-- Order Statistics -->
+            <!-- Urgent Pending Payments -->
             <div class="col-md-6 col-lg-4 col-xl-4 order-0 mb-6">
                 <div class="card h-100">
                     <div class="card-header d-flex justify-content-between">
                         <div class="card-title mb-0">
-                            <h5 class="mb-1 me-2">Order Statistics</h5>
-                            <p class="card-subtitle">42.82k Total Sales</p>
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn text-body-secondary p-0" type="button" id="orederStatistics"
-                                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="icon-base bx bx-dots-vertical-rounded icon-lg"></i>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="orederStatistics">
-                                <a class="dropdown-item" href="javascript:void(0);">Select All</a>
-                                <a class="dropdown-item" href="javascript:void(0);">Refresh</a>
-                                <a class="dropdown-item" href="javascript:void(0);">Share</a>
-                            </div>
+                            <h5 class="mb-1 me-2">Pembayaran Mendesak</h5>
+                            <p class="card-subtitle">{{ number_format($dashboardData['stats']['pendingPayments']) }} Total Pending</p>
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-6">
-                            <div class="d-flex flex-column align-items-center gap-1">
-                                <h3 class="mb-1">8,258</h3>
-                                <small>Total Orders</small>
-                            </div>
-                            <div id="orderStatisticsChart"></div>
-                        </div>
                         <ul class="p-0 m-0">
+                            @forelse($dashboardData['recentActivity']['urgentPendingPayments'] as $payment)
                             <li class="d-flex align-items-center mb-5">
                                 <div class="avatar flex-shrink-0 me-3">
-                                    <span class="avatar-initial rounded bg-label-primary"><i
-                                            class="icon-base bx bx-mobile-alt"></i></span>
+                                    <span class="avatar-initial rounded bg-label-warning">
+                                        <i class="icon-base bx bx-time"></i>
+                                    </span>
                                 </div>
                                 <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
                                     <div class="me-2">
-                                        <h6 class="mb-0">Electronic</h6>
-                                        <small>Mobile, Earbuds, TV</small>
+                                        <h6 class="mb-0">{{ $payment['user_id']['name'] }}</h6>
+                                        <small class="d-block text-muted">{{ $payment['event_id']['name'] }}</small>
+                                        <small class="d-block">Rp {{ number_format($payment['payment_amount']) }}</small>
                                     </div>
-                                    <div class="user-progress">
-                                        <h6 class="mb-0">82.5k</h6>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="d-flex align-items-center mb-5">
-                                <div class="avatar flex-shrink-0 me-3">
-                                    <span class="avatar-initial rounded bg-label-success"><i
-                                            class="icon-base bx bx-closet"></i></span>
-                                </div>
-                                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                    <div class="me-2">
-                                        <h6 class="mb-0">Fashion</h6>
-                                        <small>T-shirt, Jeans, Shoes</small>
-                                    </div>
-                                    <div class="user-progress">
-                                        <h6 class="mb-0">23.8k</h6>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="d-flex align-items-center mb-5">
-                                <div class="avatar flex-shrink-0 me-3">
-                                    <span class="avatar-initial rounded bg-label-info"><i
-                                            class="icon-base bx bx-home-alt"></i></span>
-                                </div>
-                                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                    <div class="me-2">
-                                        <h6 class="mb-0">Decor</h6>
-                                        <small>Fine Art, Dining</small>
-                                    </div>
-                                    <div class="user-progress">
-                                        <h6 class="mb-0">849k</h6>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="d-flex align-items-center">
-                                <div class="avatar flex-shrink-0 me-3">
-                                    <span class="avatar-initial rounded bg-label-secondary"><i
-                                            class="icon-base bx bx-football"></i></span>
-                                </div>
-                                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                    <div class="me-2">
-                                        <h6 class="mb-0">Sports</h6>
-                                        <small>Football, Cricket Kit</small>
-                                    </div>
-                                    <div class="user-progress">
-                                        <h6 class="mb-0">99</h6>
-                                    </div>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <!--/ Order Statistics -->
-
-            <!-- Expense Overview -->
-            <div class="col-md-6 col-lg-4 order-1 mb-6">
-                <div class="card h-100">
-                    <div class="card-header nav-align-top">
-                        <ul class="nav nav-pills flex-wrap row-gap-2" role="tablist">
-                            <li class="nav-item">
-                                <button type="button" class="nav-link active" role="tab" data-bs-toggle="tab"
-                                    data-bs-target="#navs-tabs-line-card-income"
-                                    aria-controls="navs-tabs-line-card-income" aria-selected="true">
-                                    Income
-                                </button>
-                            </li>
-                            <li class="nav-item">
-                                <button type="button" class="nav-link" role="tab">Expenses</button>
-                            </li>
-                            <li class="nav-item">
-                                <button type="button" class="nav-link" role="tab">Profit</button>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="card-body">
-                        <div class="tab-content p-0">
-                            <div class="tab-pane fade show active" id="navs-tabs-line-card-income" role="tabpanel">
-                                <div class="d-flex mb-6">
-                                    <div class="avatar flex-shrink-0 me-3">
-                                        <img src="../assets/img/icons/unicons/wallet.png" alt="User" />
-                                    </div>
-                                    <div>
-                                        <p class="mb-0">Total Balance</p>
-                                        <div class="d-flex align-items-center">
-                                            <h6 class="mb-0 me-1">$459.10</h6>
-                                            <small class="text-success fw-medium">
-                                                <i class="icon-base bx bx-chevron-up icon-lg"></i>
-                                                42.9%
-                                            </small>
+                                    <div class="user-progress text-end">
+                                        <small class="text-muted">
+                                            {{ \Carbon\Carbon::parse($payment['createdAt'])->diffForHumans() }}
+                                        </small>
+                                        <div class="mt-1">
+                                            <a href="#" class="btn btn-xs btn-outline-primary">
+                                                Verifikasi
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
-                                <div id="incomeChart"></div>
-                                <div class="d-flex align-items-center justify-content-center mt-6 gap-3">
-                                    <div class="flex-shrink-0">
-                                        <div id="expensesOfWeek"></div>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0">Income this week</h6>
-                                        <small>$39k less than last week</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            </li>
+                            @empty
+                            <li class="text-center py-4">
+                                <p class="text-muted">Tidak ada pembayaran pending</p>
+                            </li>
+                            @endforelse
+                        </ul>
                     </div>
                 </div>
             </div>
-            <!--/ Expense Overview -->
 
-            <!-- Transactions -->
-            <div class="col-md-6 col-lg-4 order-2 mb-6">
+            <!-- Recent Payment Activities -->
+            <div class="col-md-6 col-lg-8 order-1 mb-6">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h5 class="card-title m-0 me-2">Transactions</h5>
+                        <h5 class="card-title m-0 me-2">Aktivitas Pembayaran Terbaru</h5>
                         <div class="dropdown">
-                            <button class="btn text-body-secondary p-0" type="button" id="transactionID"
+                            <button class="btn text-body-secondary p-0" type="button" id="recentPayments"
                                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="icon-base bx bx-dots-vertical-rounded icon-lg"></i>
                             </button>
-                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="transactionID">
-                                <a class="dropdown-item" href="javascript:void(0);">Last 28 Days</a>
-                                <a class="dropdown-item" href="javascript:void(0);">Last Month</a>
-                                <a class="dropdown-item" href="javascript:void(0);">Last Year</a>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="recentPayments">
+                                <a class="dropdown-item" href="#">Hari Ini</a>
+                                <a class="dropdown-item" href="#">7 Hari Terakhir</a>
+                                <a class="dropdown-item" href="#">30 Hari Terakhir</a>
                             </div>
                         </div>
                     </div>
                     <div class="card-body pt-4">
                         <ul class="p-0 m-0">
+                            @forelse($dashboardData['recentActivity']['recentPayments'] as $payment)
                             <li class="d-flex align-items-center mb-6">
                                 <div class="avatar flex-shrink-0 me-3">
-                                    <img src="../assets/img/icons/unicons/paypal.png" alt="User" class="rounded" />
+                                    @if($payment['payment_status'] == 'pending')
+                                        <span class="avatar-initial rounded bg-label-warning">
+                                            <i class="icon-base bx bx-time"></i>
+                                        </span>
+                                    @elseif($payment['payment_status'] == 'approved')
+                                        <span class="avatar-initial rounded bg-label-success">
+                                            <i class="icon-base bx bx-check"></i>
+                                        </span>
+                                    @else
+                                        <span class="avatar-initial rounded bg-label-danger">
+                                            <i class="icon-base bx bx-x"></i>
+                                        </span>
+                                    @endif
                                 </div>
                                 <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
                                     <div class="me-2">
-                                        <small class="d-block">Paypal</small>
-                                        <h6 class="fw-normal mb-0">Send money</h6>
+                                        <h6 class="fw-normal mb-0">{{ $payment['user_id']['name'] }}</h6>
+                                        <small class="d-block text-muted">{{ $payment['event_id']['name'] }}</small>
+                                        <small class="d-block">Rp {{ number_format($payment['payment_amount']) }}</small>
                                     </div>
-                                    <div class="user-progress d-flex align-items-center gap-2">
-                                        <h6 class="fw-normal mb-0">+82.6</h6>
-                                        <span class="text-body-secondary">USD</span>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="d-flex align-items-center mb-6">
-                                <div class="avatar flex-shrink-0 me-3">
-                                    <img src="../assets/img/icons/unicons/wallet.png" alt="User" class="rounded" />
-                                </div>
-                                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                    <div class="me-2">
-                                        <small class="d-block">Wallet</small>
-                                        <h6 class="fw-normal mb-0">Mac'D</h6>
-                                    </div>
-                                    <div class="user-progress d-flex align-items-center gap-2">
-                                        <h6 class="fw-normal mb-0">+270.69</h6>
-                                        <span class="text-body-secondary">USD</span>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="d-flex align-items-center mb-6">
-                                <div class="avatar flex-shrink-0 me-3">
-                                    <img src="../assets/img/icons/unicons/chart.png" alt="User" class="rounded" />
-                                </div>
-                                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                    <div class="me-2">
-                                        <small class="d-block">Transfer</small>
-                                        <h6 class="fw-normal mb-0">Refund</h6>
-                                    </div>
-                                    <div class="user-progress d-flex align-items-center gap-2">
-                                        <h6 class="fw-normal mb-0">+637.91</h6>
-                                        <span class="text-body-secondary">USD</span>
+                                    <div class="user-progress d-flex align-items-center gap-2 flex-column">
+                                        @if($payment['payment_status'] == 'pending')
+                                            <span class="badge bg-warning">Pending</span>
+                                        @elseif($payment['payment_status'] == 'approved')
+                                            <span class="badge bg-success">Approved</span>
+                                            <small class="text-muted">
+                                                by {{ $payment['payment_verified_by']['name'] ?? 'System' }}
+                                            </small>
+                                        @else
+                                            <span class="badge bg-danger">Rejected</span>
+                                            @if($payment['rejection_reason'])
+                                                <small class="text-muted">{{ $payment['rejection_reason'] }}</small>
+                                            @endif
+                                        @endif
+                                        <small class="text-muted">
+                                            {{ \Carbon\Carbon::parse($payment['createdAt'])->diffForHumans() }}
+                                        </small>
                                     </div>
                                 </div>
                             </li>
-                            <li class="d-flex align-items-center mb-6">
-                                <div class="avatar flex-shrink-0 me-3">
-                                    <img src="../assets/img/icons/unicons/cc-primary.png" alt="User"
-                                        class="rounded" />
-                                </div>
-                                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                    <div class="me-2">
-                                        <small class="d-block">Credit Card</small>
-                                        <h6 class="fw-normal mb-0">Ordered Food</h6>
-                                    </div>
-                                    <div class="user-progress d-flex align-items-center gap-2">
-                                        <h6 class="fw-normal mb-0">-838.71</h6>
-                                        <span class="text-body-secondary">USD</span>
-                                    </div>
-                                </div>
+                            @empty
+                            <li class="text-center py-4">
+                                <p class="text-muted">Tidak ada aktivitas pembayaran</p>
                             </li>
-                            <li class="d-flex align-items-center mb-6">
-                                <div class="avatar flex-shrink-0 me-3">
-                                    <img src="../assets/img/icons/unicons/wallet.png" alt="User" class="rounded" />
-                                </div>
-                                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                    <div class="me-2">
-                                        <small class="d-block">Wallet</small>
-                                        <h6 class="fw-normal mb-0">Starbucks</h6>
-                                    </div>
-                                    <div class="user-progress d-flex align-items-center gap-2">
-                                        <h6 class="fw-normal mb-0">+203.33</h6>
-                                        <span class="text-body-secondary">USD</span>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="d-flex align-items-center">
-                                <div class="avatar flex-shrink-0 me-3">
-                                    <img src="../assets/img/icons/unicons/cc-warning.png" alt="User"
-                                        class="rounded" />
-                                </div>
-                                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                    <div class="me-2">
-                                        <small class="d-block">Mastercard</small>
-                                        <h6 class="fw-normal mb-0">Ordered Food</h6>
-                                    </div>
-                                    <div class="user-progress d-flex align-items-center gap-2">
-                                        <h6 class="fw-normal mb-0">-92.45</h6>
-                                        <span class="text-body-secondary">USD</span>
-                                    </div>
-                                </div>
-                            </li>
+                            @endforelse
                         </ul>
                     </div>
                 </div>
             </div>
-            <!--/ Transactions -->
+        </div>
+
+        <!-- Events with Most Pending Payments -->
+        <div class="row">
+            <div class="col-12 mb-6">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h5 class="card-title m-0 me-2">Event dengan Pembayaran Pending Terbanyak</h5>
+                        <div class="dropdown">
+                            <button class="btn text-body-secondary p-0" type="button" id="eventsPending"
+                                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="icon-base bx bx-dots-vertical-rounded icon-lg"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="eventsPending">
+                                <a class="dropdown-item" href="#">Lihat Semua</a>
+                                <a class="dropdown-item" href="#">Export Data</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-borderless">
+                                <thead>
+                                    <tr>
+                                        <th>Event Name</th>
+                                        <th>Pending Count</th>
+                                        <th>Total Amount</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($dashboardData['charts']['eventsPendingPayments'] as $event)
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar flex-shrink-0 me-3">
+                                                    <span class="avatar-initial rounded bg-label-primary">
+                                                        <i class="icon-base bx bx-calendar"></i>
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ $event['eventName'] }}</h6>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning">{{ number_format($event['pendingCount']) }}</span>
+                                        </td>
+                                        <td>
+                                            <strong>Rp {{ number_format($event['totalAmount']) }}</strong>
+                                        </td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-outline-primary">
+                                                Verifikasi
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4">
+                                            <p class="text-muted">Tidak ada event dengan pending payments</p>
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+@endsection
+@section('scripts')
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Payment Statistics Chart (Daily Trend)
+        const dailyData = @json($dashboardData['charts']['dailyPaymentStats']);
+        
+        // Process daily data for chart
+        const last7Days = [];
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            last7Days.push(date.toISOString().split('T')[0]);
+        }
+
+        const approvedData = last7Days.map(date => {
+            const found = dailyData.find(item => item._id.date === date && item._id.status === 'approved');
+            return found ? found.count : 0;
+        });
+
+        const rejectedData = last7Days.map(date => {
+            const found = dailyData.find(item => item._id.date === date && item._id.status === 'rejected');
+            return found ? found.count : 0;
+        });
+
+        const chartLabels = last7Days.map(date => {
+            const d = new Date(date);
+            return d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' });
+        });
+
+        new Chart(document.getElementById('paymentStatsChart'), {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: 'Approved',
+                        data: approvedData,
+                        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Rejected',
+                        data: rejectedData,
+                        backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        stepSize: 1
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                }
+            }
+        });
+
+        // Payment Status Pie Chart
+        const statusData = @json($dashboardData['charts']['paymentStatusStats']);
+        
+        new Chart(document.getElementById('paymentStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: statusData.map(item => item.name),
+                datasets: [{
+                    data: statusData.map(item => item.value),
+                    backgroundColor: statusData.map(item => item.color),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+
+        // Update numbers with animation effect
+        function animateNumbers() {
+            const elements = document.querySelectorAll('.card-title');
+            elements.forEach(element => {
+                if (element.textContent.match(/^\d/)) {
+                    const finalValue = parseInt(element.textContent.replace(/,/g, ''));
+                    let currentValue = 0;
+                    const increment = finalValue / 50;
+                    
+                    const timer = setInterval(() => {
+                        currentValue += increment;
+                        if (currentValue >= finalValue) {
+                            element.textContent = finalValue.toLocaleString();
+                            clearInterval(timer);
+                        } else {
+                            element.textContent = Math.floor(currentValue).toLocaleString();
+                        }
+                    }, 30);
+                }
+            });
+        }
+
+        // Initialize animations when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add some delay for better visual effect
+            setTimeout(animateNumbers, 500);
+        });
+
+        // Auto refresh data every 5 minutes
+        setInterval(function() {
+            location.reload();
+        }, 300000); // 5 minutes
+
+       
+
+        // Format currency on hover for better readability
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(element) {
+            new bootstrap.Tooltip(element);
+        });
+    </script>
+
 @endsection

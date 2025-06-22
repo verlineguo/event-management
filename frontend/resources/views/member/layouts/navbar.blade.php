@@ -11,7 +11,8 @@
                 <li class="nav-item active"><a href="{{ route('member.home') }}" class="nav-link">Home</a></li>
                 <li class="nav-item"><a href="{{ route('member.events.index') }}" class="nav-link">Events</a></li>
                 <li class="nav-item"><a href="{{{ route('member.myRegistrations.index') }}}" class="nav-link">History</a></li>
-               
+                <li class="nav-item"><a href="{{ route('member.profile') }}" class="nav-link">Profile</a></li>
+
      
                 
                 <li class="nav-item cta mr-md-2">

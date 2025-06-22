@@ -16,6 +16,8 @@ exports.register = async (req, res) => {
       email: req.body.email,
       password: hashedPassword,
       role_id: memberRole._id,
+      gender: '',
+      phone: '',
       status: true,
     });
 

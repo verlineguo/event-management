@@ -15,6 +15,7 @@ const registrationRoutes = require('./routes/Registration');
 const paymentRoutes = require('./routes/Payment');
 const attendanceRoutes = require('./routes/Attendance');
 const certificateRoutes = require('./routes/Certificate');
+const profileRoutes = require('./routes/Profile');
 const dashboardRoutes = require('./routes/Dashboard');
 
 // CORS
@@ -46,6 +47,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/certificate', certificateRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/profile', profileRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

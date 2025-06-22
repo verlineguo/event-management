@@ -27,16 +27,18 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/login', 'login');
     Route::post('/register', 'register');
 
-    // Protected routes
-    Route::get('/profile', 'profile')->name('profile');
     Route::post('/logout', 'logout')->name('logout');
 });
+
 
 Route::prefix('admin')
     ->middleware(['auth.jwt', 'role:admin'])
     ->group(function () {
         Route::controller(AdminMainController::class)->group(function () {
             Route::get('/dashboard', 'index')->name('admin.dashboard');
+            Route::get('/profile', 'profile')->name('admin.profile');
+            Route::patch('/profile', 'update')->name('admin.profile.update');
+            Route::put('/profile/password', 'updatePassword')->name('admin.profile.update-password');
         });
 
         Route::controller(UserController::class)->group(function () {
@@ -65,6 +67,7 @@ Route::prefix('admin')
             Route::put('/role/{id}', 'update')->name('admin.role.update');
             Route::delete('/role/{id}', 'destroy')->name('admin.role.destroy');
         });
+        
     });
 
 Route::prefix('finance')
@@ -72,6 +75,11 @@ Route::prefix('finance')
     ->group(function () {
         Route::controller(FinanceMainController::class)->group(function () {
             Route::get('/dashboard', 'index')->name('finance.dashboard');
+
+            Route::get('/profile', 'profile')->name('finance.profile');
+            Route::patch('/profile', 'update')->name('finance.profile.update');
+            Route::put('/profile/password', 'updatePassword')->name('finance.profile.update-password');
+
         });
 
         Route::controller(PaymentController::class)->group(function () {
@@ -80,6 +88,7 @@ Route::prefix('finance')
             Route::put('/payment/{id}/status', 'updateStatus')->name('finance.payment.update-status');
             Route::post('/payment/bulk-approve', 'bulkApprove')->name('finance.payment.bulk-approve');
         });
+
     });
 
 Route::prefix('committee')
@@ -87,6 +96,10 @@ Route::prefix('committee')
     ->group(function () {
         Route::controller(CommitteeMainController::class)->group(function () {
             Route::get('/dashboard', 'index')->name('committee.dashboard');
+            Route::get('/profile', 'profile')->name('committee.profile');
+            Route::patch('/profile', 'update')->name('committee.profile.update');
+            Route::put('/profile/password', 'updatePassword')->name('committee.profile.update-password');
+        
         });
 
         Route::controller(EventController::class)->group(function () {
@@ -117,6 +130,8 @@ Route::prefix('committee')
 
             Route::get('/attendance/{sessionId}/export', 'exportAttendance')->name('committee.attendance.export');
         });
+
+        
     });
 
 Route::prefix('member')
@@ -127,6 +142,11 @@ Route::prefix('member')
             Route::get('/events', 'events')->name('member.events.index');
             Route::get('/events/{id}', 'showEvent')->name('member.events.show');
             Route::get('/events/search', 'search')->name('member.event.search');
+            Route::get('/profile', 'profile')->name('member.profile');
+            Route::patch('/profile', 'update')->name('member.profile.update');
+            Route::put('/profile/password', 'updatePassword')->name('member.profile.update-password');
+            Route::get('/profile/current-user', 'getCurrentUser')->name('current-user');
+
         });
 
         Route::controller(MemberRegistrationController::class)->group(function () {
@@ -149,6 +169,8 @@ Route::prefix('member')
         Route::controller(CertificateController::class)->group(function () {
             Route::get('/event/{id}/certificate', 'certificate')->name('member.event.certificate');
         });
+
+      
     });
 
 Route::prefix('guest')->group(function () {
