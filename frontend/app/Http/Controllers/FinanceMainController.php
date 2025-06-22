@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+
 class FinanceMainController extends Controller
 {
     private $apiUrl = 'http://localhost:5000/api';

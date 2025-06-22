@@ -15,6 +15,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpKernel\Profiler\Profile;
 
 Route::redirect('/', '/guest/home');
 
@@ -31,11 +32,15 @@ Route::controller(AuthController::class)->group(function () {
 });
 
 
+
 Route::prefix('admin')
     ->middleware(['auth.jwt', 'role:admin'])
     ->group(function () {
         Route::controller(AdminMainController::class)->group(function () {
             Route::get('/dashboard', 'index')->name('admin.dashboard');
+            Route::get('/profile', 'profile')->name('admin.profile');
+            Route::patch('/profile', 'update')->name('admin.profile.update');
+            Route::put('/profile/password', 'updatePassword')->name('admin.profile.update-password');
             Route::get('/profile', 'profile')->name('admin.profile');
             Route::patch('/profile', 'update')->name('admin.profile.update');
             Route::put('/profile/password', 'updatePassword')->name('admin.profile.update-password');
@@ -80,6 +85,11 @@ Route::prefix('finance')
             Route::patch('/profile', 'update')->name('finance.profile.update');
             Route::put('/profile/password', 'updatePassword')->name('finance.profile.update-password');
 
+
+            Route::get('/profile', 'profile')->name('finance.profile');
+            Route::patch('/profile', 'update')->name('finance.profile.update');
+            Route::put('/profile/password', 'updatePassword')->name('finance.profile.update-password');
+
         });
 
         Route::controller(PaymentController::class)->group(function () {
@@ -89,6 +99,7 @@ Route::prefix('finance')
             Route::post('/payment/bulk-approve', 'bulkApprove')->name('finance.payment.bulk-approve');
         });
 
+
     });
 
 Route::prefix('committee')
@@ -96,6 +107,10 @@ Route::prefix('committee')
     ->group(function () {
         Route::controller(CommitteeMainController::class)->group(function () {
             Route::get('/dashboard', 'index')->name('committee.dashboard');
+            Route::get('/profile', 'profile')->name('committee.profile');
+            Route::patch('/profile', 'update')->name('committee.profile.update');
+            Route::put('/profile/password', 'updatePassword')->name('committee.profile.update-password');
+        
             Route::get('/profile', 'profile')->name('committee.profile');
             Route::patch('/profile', 'update')->name('committee.profile.update');
             Route::put('/profile/password', 'updatePassword')->name('committee.profile.update-password');
@@ -132,6 +147,8 @@ Route::prefix('committee')
         });
 
         
+
+        
     });
 
 Route::prefix('member')
@@ -142,6 +159,11 @@ Route::prefix('member')
             Route::get('/events', 'events')->name('member.events.index');
             Route::get('/events/{id}', 'showEvent')->name('member.events.show');
             Route::get('/events/search', 'search')->name('member.event.search');
+            Route::get('/profile', 'profile')->name('member.profile');
+            Route::patch('/profile', 'update')->name('member.profile.update');
+            Route::put('/profile/password', 'updatePassword')->name('member.profile.update-password');
+            Route::get('/profile/current-user', 'getCurrentUser')->name('current-user');
+
             Route::get('/profile', 'profile')->name('member.profile');
             Route::patch('/profile', 'update')->name('member.profile.update');
             Route::put('/profile/password', 'updatePassword')->name('member.profile.update-password');
@@ -169,6 +191,8 @@ Route::prefix('member')
         Route::controller(CertificateController::class)->group(function () {
             Route::get('/event/{id}/certificate', 'certificate')->name('member.event.certificate');
         });
+
+      
 
       
     });
