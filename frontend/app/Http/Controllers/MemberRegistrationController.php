@@ -385,7 +385,6 @@ $paymentAmount = $registrationData['payment_amount'] ?? 0;
 
             if ($response->successful()) {
                 $registration = $response->json();
-
                 // Format registration data
                 if (isset($registration['event_id']) && is_array($registration['event_id']) && isset($registration['event_id']['date'])) {
                     $registration['event_id']['formatted_date'] = Carbon::parse($registration['event_id']['date'])->format('d M Y');

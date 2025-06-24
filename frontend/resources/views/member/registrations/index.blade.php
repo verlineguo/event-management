@@ -25,19 +25,19 @@
         <!-- Filter Tabs -->
         <div class="filter-tabs">
             <button class="filter-tab active" data-status="all">
-                <i class="bx bx-list"></i>
+                <i class="bx bx-list align-middle"></i>
                 Semua
             </button>
             <button class="filter-tab" data-status="confirmed">
-                <i class="bx bx-check-circle"></i>
+                <i class="bx bx-check-circle align-middle"></i>
                 Terkonfirmasi
             </button>
             <button class="filter-tab" data-status="registered">
-                <i class="bx bx-timer"></i>
+                <i class="bx bx-timer align-middle"></i>
                 Menunggu Verifikasi
             </button>
             <button class="filter-tab" data-status="draft">
-                <i class="bx bx-edit"></i>
+                <i class="bx bx-edit align-middle"></i>
                 Draft
             </button>
         </div>
@@ -53,7 +53,7 @@
                         <div class="card-header">
                             <h3>{{ $registration['event_id']['name'] ?? 'Event Name' }}</h3>
                             <div class="event-date">
-                                <i class="bx bx-calendar"></i>
+                                <i class="bx bx-calendar align-middle"></i>
                                 {{ $registration['event_id']['date_range'] ?? 'Date Range' }}
                             </div>
                         </div>
@@ -63,7 +63,7 @@
                             <!-- Registration Meta -->
                             <div class="registration-meta">
                                 <div class="meta-item">
-                                    <i class="bx bx-hashtag"></i>
+                                    <i class="bx bx-hashtag align-middle"></i>
                                     <span>ID: <span
                                             class="meta-value">{{ substr($registration['_id'] ?? 'N/A', -8) }}</span></span>
                                 </div>
@@ -130,7 +130,7 @@
                             <div class="card-actions">
                                 <a href="{{ route('member.myRegistrations.show', $registration['_id']) }}"
                                     class="btn-sm btn-primary-sm">
-                                    <i class="bx bx-eye"></i>
+                                    <i class="bx bx-eye align-middle"></i>
                                     Detail
                                 </a>
 
@@ -139,7 +139,7 @@
                                         ($registration['payment_amount'] ?? 0) == 0)
                                     <a href="{{ route('member.myRegistrations.qr-codes', $registration['_id']) }}"
                                         class="btn-sm btn-success-sm">
-                                        <i class="bx bx-qrcode"></i>
+                                        <i class="bx bx-qr align-middle"></i>
                                         QR Code
                                     </a>
                                 @endif
@@ -147,7 +147,7 @@
                                 @if (($registration['registration_status'] ?? 'registered') === 'draft')
                                     <a href="{{ route('member.events.register', $registration['event_id']['_id']) }}"
                                         class="btn-sm btn-outline-sm">
-                                        <i class="bx bx-edit"></i>
+                                        <i class="bx bx-edit align-middle"></i>
                                         Lanjutkan
                                     </a>
                                 @endif
@@ -172,7 +172,7 @@
         <!-- Back to Events -->
         <div class="action-buttons" style="justify-content: center; margin-top: 2rem;">
             <a href="{{ route('member.events.index') }}" class="btn btn-outline">
-                <i class="bx bx-calendar"></i>
+                <i class="bx bx-calendar align-middle"></i>
                 Lihat Event Lainnya
             </a>
         </div>

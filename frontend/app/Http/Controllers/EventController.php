@@ -118,16 +118,20 @@ class EventController extends Controller
     }
 
     public function show($id)
-    {
-        $eventResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . "/events/{$id}");
-
-        if ($eventResponse->successful()) {
-            $event = $eventResponse->json();
-            return view('committee.event.show', compact('event'));
-        }
-
-        return back()->withErrors(['message' => 'Gagal mengambil data event']);
+{
+    $eventResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . "/events/{$id}");
+    
+    if ($eventResponse->successful()) {
+        $event = $eventResponse->json();
+        
+        // Extract session registrations data from backend response
+        $sessionRegistrations = $event['sessionRegistrations'] ?? [];
+        $totalEventRegistrations = $event['totalEventRegistrations'] ?? 0;
+        return view('committee.event.show', compact('event', 'sessionRegistrations', 'totalEventRegistrations'));
     }
+    
+    return back()->withErrors(['message' => 'Gagal mengambil data event']);
+}
 
     public function update(Request $request, $id)
     {

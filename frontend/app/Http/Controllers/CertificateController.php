@@ -312,4 +312,36 @@ public function exportAttendance($sessionId)
         return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
     }
 }
+
+public function downloadCertificateMember($sessionId, $userId)
+{
+    try {
+        // Pastikan member hanya bisa download sertifikat miliknya sendiri
+        if ($userId !== session('user_id')) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke sertifikat ini');
+        }
+
+        $response = Http::withToken(session('jwt_token'))
+            ->get($this->apiUrl . '/download/member/' . $sessionId . '/' . $userId);
+
+        if (!$response->successful()) {
+            $errorMessage = 'Sertifikat tidak ditemukan';
+            if ($response->status() === 404) {
+                $errorMessage = 'Sertifikat belum tersedia untuk Anda';
+            }
+            return redirect()->back()->with('error', $errorMessage);
+        }
+
+        $data = $response->json();
+
+        // Redirect ke URL file sertifikat
+        return redirect(asset('storage/' . $data['download_url']));
+                
+    } catch (\Exception $e) {
+        return redirect()
+            ->back()
+            ->with('error', 'Terjadi kesalahan saat mengunduh sertifikat: ' . $e->getMessage());
+    }
+}
+
 }

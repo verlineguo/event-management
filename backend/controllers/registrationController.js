@@ -5,6 +5,8 @@ const SessionRegistration = require('../models/sessionRegistration');
 const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
+const Attendance = require('../models/Attendance');
+const Certificate = require('../models/Certificate');
 
 // Check if user already registered for an event
 exports.checkRegistration = async (req, res) => {
@@ -212,6 +214,7 @@ exports.getMyRegistrations = async (req, res) => {
 };
 
 // Get single registration
+// Get single registration - UPDATED VERSION
 exports.getRegistration = async (req, res) => {
   try {
     const { id } = req.params;
@@ -228,15 +231,43 @@ exports.getRegistration = async (req, res) => {
       return res.status(404).json({ message: 'Registrasi tidak ditemukan' });
     }
 
+    // Get session registrations with populated session data
     const sessionRegistrations = await SessionRegistration.find({
       registration_id: registration._id
     }).populate('session_id', 'title description date start_time end_time location speaker status session_fee');
 
+    // For each session registration, get attendance and certificate data
+    const sessionRegistrationsWithDetails = await Promise.all(
+      sessionRegistrations.map(async (sessionReg) => {
+        const sessionRegObj = sessionReg.toObject();
+
+        // Get attendance data
+        const attendance = await Attendance.findOne({
+          session_registration_id: sessionReg._id,
+          user_id: userId
+        }).populate('scanned_by', 'name');
+
+        // Get certificate data
+        const certificate = await Certificate.findOne({
+          session_id: sessionReg.session_id._id,
+          user_id: userId,
+          registration_id: registration._id
+        }).populate('uploaded_by', 'name');
+
+        // Add attendance and certificate data to session registration
+        sessionRegObj.attendance = attendance;
+        sessionRegObj.certificate = certificate;
+
+        return sessionRegObj;
+      })
+    );
+
     res.json({
       ...registration.toObject(),
-      session_registrations: sessionRegistrations
+      session_registrations: sessionRegistrationsWithDetails
     });
   } catch (err) {
+    console.error('Error in getRegistration:', err);
     res.status(500).json({ message: err.message });
   }
 };

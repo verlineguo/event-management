@@ -5,17 +5,14 @@ const Session = require('../models/Session');
 const Event = require('../models/Event');
 const Attendance = require('../models/Attendance');
 const Certificate = require('../models/Certificate');
+const mongoose = require('mongoose');
 
+// Scan QR Code for attendance
 // Scan QR Code for attendance
 exports.scanQRCode = async (req, res) => {
   try {
     const { qr_token, scanned_by } = req.body;
     
-    console.log('=== QR SCAN DEBUG ===');
-    console.log('Received qr_token:', qr_token);
-    console.log('Received scanned_by:', scanned_by);
-    console.log('Token type:', typeof qr_token);
-    console.log('Token length:', qr_token ? qr_token.length : 'null');
 
     if (!qr_token || !scanned_by) {
       return res.status(400).json({ 
@@ -23,8 +20,6 @@ exports.scanQRCode = async (req, res) => {
       });
     }
 
-    // First, let's see if ANY SessionRegistration exists with this exact token
-    console.log('Searching for token in database...');
     const directSearch = await SessionRegistration.findOne({ qr_token: qr_token });
     console.log('Direct search result:', directSearch ? 'FOUND' : 'NOT FOUND');
     
@@ -73,6 +68,51 @@ exports.scanQRCode = async (req, res) => {
 
     console.log('Populated session registration found:', !!sessionRegistration);
 
+    // Debug logging untuk memahami struktur data
+    console.log('sessionRegistration structure:', {
+      id: sessionRegistration?._id,
+      registration_id: sessionRegistration?.registration_id ? {
+        id: sessionRegistration.registration_id._id,
+        registration_status: sessionRegistration.registration_id.registration_status,
+        payment_status: sessionRegistration.registration_id.payment_status,
+        event_id: sessionRegistration.registration_id.event_id
+      } : null,
+      session_id: sessionRegistration?.session_id ? {
+        id: sessionRegistration.session_id._id,
+        title: sessionRegistration.session_id.title,
+        status: sessionRegistration.session_id.status
+      } : null,
+      user_id: sessionRegistration?.user_id ? {
+        id: sessionRegistration.user_id._id,
+        name: sessionRegistration.user_id.name
+      } : null
+    });
+
+    // Validate registration_id exists and is populated
+    if (!sessionRegistration.registration_id) {
+      return res.status(400).json({ 
+        message: 'Data registrasi tidak lengkap - registration_id tidak ditemukan' 
+      });
+    }
+
+    // Validate event_id exists and is populated
+    if (!sessionRegistration.registration_id.event_id) {
+      return res.status(400).json({ 
+        message: 'Event tidak ditemukan - kemungkinan event sudah dihapus atau referensi tidak valid',
+        debug_info: {
+          registration_id: sessionRegistration.registration_id._id,
+          has_event_id: !!sessionRegistration.registration_id.event_id
+        }
+      });
+    }
+
+    // Check if event is cancelled
+    if (sessionRegistration.registration_id.event_id.status === 'cancelled') {
+      return res.status(400).json({ 
+        message: 'Event telah dibatalkan' 
+      });
+    }
+
     // Rest of your validation logic...
     if (!sessionRegistration.registration_id) {
       return res.status(400).json({ 
@@ -91,13 +131,6 @@ exports.scanQRCode = async (req, res) => {
     if (sessionRegistration.registration_id.payment_status !== 'approved') {
       return res.status(400).json({ 
         message: 'Pembayaran belum disetujui' 
-      });
-    }
-
-    // Check if event is still active
-    if (sessionRegistration.registration_id.event_id.status === 'cancelled') {
-      return res.status(400).json({ 
-        message: 'Event telah dibatalkan' 
       });
     }
 
@@ -347,6 +380,7 @@ exports.getSessionAttendance = async (req, res) => {
       })
       .sort({ check_in_time: -1 });
 
+      console.log(attendances);
     // Ambil data session
     const session = await Session.findById(sessionId)
       .populate('event_id', 'name');
@@ -546,6 +580,54 @@ exports.getEventParticipants = async (req, res) => {
       event: null,
       participants: [],
       total_participants: 0
+    });
+  }
+};
+
+exports.getScannedParticipants = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    if (!eventId) {
+      return res.status(400).json({ 
+        message: 'Event ID is required',
+        scanned_participants: []
+      });
+    }
+
+    // Cari semua session untuk event ini
+    const sessions = await Session.find({ event_id: eventId }).select('_id');
+const sessionIds = sessions.map(s => new mongoose.Types.ObjectId(s._id));
+
+    const attendances = await Attendance.find({ session_id: { $in: sessionIds } })
+      .populate('session_id', 'title date start_time end_time event_id')
+      .populate('user_id', 'name email')
+      .populate('session_registration_id')
+      .sort({ createdAt: -1 });
+    // Transform data untuk response
+    const scannedParticipants = attendances
+      .filter(att => att.session_id && att.user_id)
+      .map(attendance => ({
+        name: attendance.user_id.name,
+        email: attendance.user_id.email,
+        session: attendance.session_id.title,
+        session_id: attendance.session_id._id,
+        scanned_at: attendance.createdAt,
+        user_id: attendance.user_id._id,
+        check_in_time: attendance.check_in_time,
+        attendance_method: attendance.attendance_method
+      }));
+
+    res.json({
+      attendance: attendances,
+      scanned_participants: scannedParticipants,
+      total_scanned: scannedParticipants.length
+    });
+
+  } catch (err) {
+    console.error('Error:', err.message);
+    res.status(500).json({ 
+      message: err.message,
+      scanned_participants: []
     });
   }
 };

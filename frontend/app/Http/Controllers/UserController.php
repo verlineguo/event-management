@@ -13,10 +13,12 @@ class UserController extends Controller
     public function index()
     {
         $response = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/users');
+        $rolesResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/role');
 
-        if ($response->successful()) {
+        if ($response->successful() && $rolesResponse->successful()) {
             $users = $response->json();
-            return view('admin.user.index', compact('users'));
+            $roles = $rolesResponse->json();
+            return view('admin.user.index', compact('users', 'roles'));
         }
 
         return back()->withErrors(['message' => 'Gagal mengambil data users']);

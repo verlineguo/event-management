@@ -189,18 +189,22 @@
                                                     </div>
 
                                                     <!-- Session Registration Statistics -->
+                                                    <!-- Bagian dalam loop sessions - replace bagian Session Registration Statistics -->
                                                     @if (isset($session['max_participants']) && $session['max_participants'])
                                                         @php
-                                                            // Asumsi ada data session registration count
+                                                            // Ambil data registrasi yang sudah dihitung dari backend
                                                             $sessionRegistrationCount =
                                                                 $sessionRegistrations[$session['_id']] ?? 0;
-                                                            $availableSlots =
-                                                                $session['max_participants'] -
-                                                                $sessionRegistrationCount;
+                                                            $maxParticipants = $session['max_participants'];
+                                                            $availableSlots = max(
+                                                                0,
+                                                                $maxParticipants - $sessionRegistrationCount,
+                                                            );
                                                             $percentage =
-                                                                ($sessionRegistrationCount /
-                                                                    $session['max_participants']) *
-                                                                100;
+                                                                $maxParticipants > 0
+                                                                    ? ($sessionRegistrationCount / $maxParticipants) *
+                                                                        100
+                                                                    : 0;
                                                         @endphp
 
                                                         <div class="mt-3 pt-3 border-top">
@@ -231,6 +235,16 @@
                                                             </div>
                                                             <small class="text-muted">{{ number_format($percentage, 1) }}%
                                                                 filled</small>
+
+                                                            @if ($availableSlots <= 0)
+                                                                <div class="mt-2">
+                                                                    <span class="badge bg-danger">FULL</span>
+                                                                </div>
+                                                            @elseif($percentage >= 90)
+                                                                <div class="mt-2">
+                                                                    <span class="badge bg-warning">Almost Full</span>
+                                                                </div>
+                                                            @endif
                                                         </div>
                                                     @else
                                                         <div class="mt-3 pt-3 border-top">

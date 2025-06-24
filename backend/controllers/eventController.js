@@ -1,6 +1,7 @@
 const Event = require('../models/Event');
 const Session = require('../models/Session');
-
+const SessionRegistration = require('../models/sessionRegistration');
+const Registration = require('../models/Registration');
 
 // Get all events with sessions
 exports.getAllEvents = async (req, res) => {
@@ -81,23 +82,47 @@ exports.getAllSessionsWithEvents = async (req, res) => {
 };
 
 // Get one event with sessions
+// Get one event with sessions and registration counts
 exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
       .populate('created_by', 'name email')
       .populate('category_id', 'name description color');
-    
+        
     if (!event) return res.status(404).json({ message: 'Event not found' });
-    
+        
     // Get sessions for this event
     const sessions = await Session.find({ event_id: req.params.id })
       .sort({ session_order: 1, date: 1 });
     
+    // Get session registration counts for each session
+    const sessionRegistrations = {};
+    
+    for (const session of sessions) {
+      // Count active session registrations (tidak cancelled)
+      const registrationCount = await SessionRegistration.countDocuments({
+        session_id: session._id,
+        status: { $ne: 'cancelled' } // Hitung yang tidak cancelled
+      });
+      
+      sessionRegistrations[session._id.toString()] = registrationCount;
+    }
+    
+    // Get total event registrations (confirmed registrations)
+    const totalEventRegistrations = await Registration.countDocuments({
+      event_id: req.params.id,
+      registration_status: 'confirmed',
+      payment_status: 'approved'
+    });
+        
     res.json({
       ...event.toObject(),
-      sessions: sessions
+      sessions: sessions,
+      sessionRegistrations: sessionRegistrations,
+      totalEventRegistrations: totalEventRegistrations
     });
   } catch (err) {
+    console.error('Error in getEventById:', err);
     res.status(500).json({ message: err.message });
   }
 };

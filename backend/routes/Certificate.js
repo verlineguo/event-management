@@ -9,6 +9,7 @@ router.get('/my-certificates',authenticateToken, certificateController.getMyCert
 // Committee/Admin routes - manage certificate
 router.post('/sessions/:sessionId/certificate', certificateController.uploadCertificate);
 router.get('/download/:participantId', authenticateToken, certificateController.downloadCertificate);
+router.get('/download/member/:sessionId/:userId', authenticateToken, certificateController.downloadCertificateMember);
 router.post('/sessions/:sessionId/bulk-certificates', authenticateToken, certificateController.bulkUploadCertificates);
 router.delete('/certificates/revoke/:participantId', certificateController.revokeCertificate);
 router.get('/sessions/:sessionId/certificates', certificateController.getSessionCertificates);

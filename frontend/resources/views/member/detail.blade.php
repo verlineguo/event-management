@@ -280,55 +280,7 @@
         </div>
     </div>
 
-    <style>
-    .upload-section {
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        border-left: 4px solid #dc3545;
-    }
 
-    .upload-section h4 {
-        color: #dc3545;
-        margin-bottom: 15px;
-    }
-
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 600;
-    }
-
-    .form-group input[type="file"] {
-        width: 100%;
-        padding: 8px;
-        border: 2px dashed #ddd;
-        border-radius: 4px;
-        background: white;
-    }
-
-    .alert {
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-
-    .alert-danger {
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
-    }
-
-    .status-rejected {
-        background: #dc3545;
-        color: white;
-    }
-    </style>
 @endsection
 
 @section('scripts')

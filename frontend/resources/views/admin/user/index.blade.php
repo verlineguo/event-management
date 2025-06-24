@@ -5,13 +5,25 @@
         <!-- Basic Bootstrap Table -->
         <div class="d-flex justify-content-between mb-5">
             <h5 class="fw-bold mb-4">
-                User Management 
+                User Management
             </h5>
             <a href="{{ route('admin.user.create') }}" class="btn btn-primary">Create</a>
         </div>
 
         <div class="card">
+            
             <h5 class="card-header">Table Users</h5>
+            <div class="ms-6">
+                <label for="role-filter" class="form-label">Filter by Role:</label>
+                <select id="role-filter" class="form-select" style="width: 200px; display: inline-block;">
+                    <option value="">All</option>
+                    @foreach ($roles as $role)
+                        @if ($role['name'] !== 'guest')
+                            <option value="{{ $role['name'] }}">{{ ucfirst($role['name']) }}</option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
             <div class="text-nowrap p-6">
                 <table id="users-table" class="p-0 table table-responsive">
                     <thead>
@@ -54,6 +66,23 @@
                                         </button>
                                     </form>
                                 </td>
+
+                                {{-- <td>
+                                    @if (($user['role_id']['name'] ?? '') !== 'member')
+                                        <a href="{{ route('admin.user.edit', $user['_id']) }}"
+                                            class="btn btn-sm btn-info"><i class="bx bx-edit"
+                                                style="font-size: 18px"></i></a>
+                                    @endif
+                                    <form action="{{ route('admin.user.destroy', $user['_id']) }}" method="POST"
+                                        style="display: inline-block" class="delete-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                            data-id="{{ $user['_id'] }}">
+                                            <i class="bx bx-trash" style="font-size: 18px"></i>
+                                        </button>
+                                    </form>
+                                </td> --}}
                             </tr>
                         @endforeach
                     </tbody>
@@ -64,10 +93,9 @@
 @endsection
 
 @section('scripts')
-  
     <script>
         $(document).ready(function() {
-            $('#users-table').DataTable({
+            var table = $('#users-table').DataTable({
                 "pageLength": 10,
                 "lengthMenu": [5, 10, 25, 50],
                 "columnDefs": [{
@@ -76,11 +104,16 @@
                 }]
             });
 
+
+            $('#role-filter').on('change', function() {
+                table.column(2).search(this.value).draw(); // Kolom ke-2 adalah Role
+            });
+
             // SweetAlert for delete confirmation
             $('.delete-btn').on('click', function() {
                 const form = $(this).closest('form');
                 const userId = $(this).data('id');
-                
+
                 Swal.fire({
                     title: 'Are you sure?',
                     text: "You won't be able to revert this!",
@@ -96,7 +129,7 @@
                 });
             });
 
-            @if(session('success'))
+            @if (session('success'))
                 Swal.fire({
                     title: 'Success!',
                     text: '{{ session('success') }}',
@@ -105,7 +138,7 @@
                 });
             @endif
 
-            @if(session('error'))
+            @if (session('error'))
                 Swal.fire({
                     title: 'Error!',
                     text: '{{ session('error') }}',

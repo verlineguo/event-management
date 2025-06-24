@@ -27,7 +27,6 @@ class AttendanceController extends Controller
             }
 
             $data = $response->json();
-
             // Handle case where event is not found
             if (!$data['event']) {
                 return redirect()->route('committee.event.index')->with('error', 'Event tidak ditemukan');
@@ -102,6 +101,16 @@ class AttendanceController extends Controller
             }
 
             $data = $response->json();
+            
+            $scannedResponse = Http::withToken(session('jwt_token'))->get($this->apiUrl . '/attendance/scanned-participants/' . $eventId);
+            
+if ($scannedResponse->successful()) {
+    $scannedData = $scannedResponse->json();
+} else {
+    $scannedData = [];
+}        
+        $data['scanned_participants'] = $scannedData['scanned_participants'];
+        $data['total_scanned'] = $scannedData['total_scanned'];
             return view('committee.event.scan-qr', compact('data'));
         } catch (\Exception $e) {
             return redirect()
@@ -234,7 +243,6 @@ class AttendanceController extends Controller
         // Get participant details from API
         $response = Http::withToken(session('jwt_token'))
             ->get($this->apiUrl . '/participants/' . $participantId . '/details');
-        dd($response->json());
         if ($response->successful()) {
             $data = $response->json();
             

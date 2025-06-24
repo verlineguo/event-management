@@ -1,7 +1,5 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Profile - ' . (session('user')['name'] ?? 'Guest'))
-
 @section('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.32/sweetalert2.min.css">

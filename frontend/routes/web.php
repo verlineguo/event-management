@@ -188,7 +188,7 @@ Route::prefix('member')
         });
 
         Route::controller(CertificateController::class)->group(function () {
-            Route::get('/event/{id}/certificate', 'certificate')->name('member.event.certificate');
+            Route::get('certificate/download/{sessionId}/{userId}', 'downloadCertificateMember')->name('member.certificate.download');
         });
 
       

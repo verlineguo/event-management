@@ -63,6 +63,30 @@ exports.downloadCertificate = async (req, res) => {
   }
 };
 
+
+exports.downloadCertificateMember = async (req, res) => {
+  try {
+    const { sessionId, userId } = req.params;
+    const certificate = await Certificate.findOne({
+      session_id: sessionId,
+      user_id: userId,
+      status: 'issued'
+    });
+    
+    if (!certificate) {
+      return res.status(404).json({ message: 'Certificate not found' });
+    }
+
+    res.json({
+      certificate_number: certificate.certificate_number,
+      download_url: certificate.file_url,
+      issued_date: certificate.issued_date
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Upload single certificate (for committee)
 exports.uploadCertificate = async (req, res) => {
   try {

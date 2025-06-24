@@ -1,14 +1,23 @@
 @extends('member.layouts.app')
 
-@section('title', 'Profile - ' . (session('user')['name'] ?? 'Guest'))
-
 @section('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.32/sweetalert2.min.css">
     <style>
-        .profile-card-content {
-            padding-top: 5rem;
+        /* Main content spacing dari navbar */
+        main {
+            margin-top: 100px;
         }
+        #profileTabs {
+    width: auto;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+        
+        .profile-card-content {
+            padding-top: 1rem;
+        }
+        
         .profile-info-item {
             display: flex;
             justify-content: space-between;
@@ -16,17 +25,107 @@
             padding: 1rem 0;
             border-bottom: 1px solid #e5e7eb;
         }
+        
         .profile-info-item:last-child {
             border-bottom: none;
         }
+        
         .profile-info-label {
             font-weight: 600;
             color: #374151;
             flex: 0 0 120px;
         }
+        
         .profile-info-value {
             color: #6b7280;
             flex: 1;
+            text-align: right;
+        }
+        
+        /* Tab styling */
+        .nav-pills .nav-link {
+            border-radius: 0.5rem;
+            margin: 0 2px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-pills .nav-link.active {
+            background-color: #6b76ff;
+        }
+        
+        .nav-pills .nav-link:not(.active):hover {
+            background-color: #f3f4f6;
+            color: #6b76ff;
+        }
+        
+        /* Card improvements */
+        .card {
+            border-radius: 0.75rem;
+        }
+        
+        .card-title {
+            color: #1f2937;
+            font-weight: 600;
+        }
+        
+        /* Form improvements */
+        .form-floating > .form-control:focus {
+            border-color: #6b76ff;
+            box-shadow: 0 0 0 0.2rem rgba(107, 118, 255, 0.25);
+        }
+        
+        .form-floating > label {
+            color: #6b7280;
+        }
+        
+        /* Button improvements */
+        .btn-primary {
+            background-color: #6b76ff;
+            border-color: #6b76ff;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #6b76ff;
+            border-color: #6b76ff;
+            transform: translateY(-1px);
+        }
+        
+        /* Badge improvements */
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            main {
+                margin-top: 15px;
+            }
+            
+            .profile-info-item {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 0.75rem 0;
+            }
+            
+            .profile-info-label {
+                flex: none;
+                margin-bottom: 0.25rem;
+                font-size: 0.875rem;
+            }
+            
+            .profile-info-value {
+                text-align: left;
+                font-size: 0.875rem;
+            }
+            
+            .nav-pills .nav-link {
+                font-size: 0.875rem;
+                padding: 0.5rem 0.75rem;
+            }
         }
     </style>
 @endsection
@@ -123,7 +222,7 @@
 
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-[10px]">
     <div class="bg-white rounded-lg shadow-md overflow-hidden container-xxl flex-grow-1 container-p-y">
-        <div class="p-6">
+        <div class="p-6 text-center">
             <h1 class="text-2xl font-bold text-gray-800 mb-2">
                 <i class="fas fa-user-circle me-2"></i>My Profile
             </h1>
@@ -132,30 +231,29 @@
         
         <hr class="border-gray-200">
 
-        {{-- Navigation Tabs --}}
-        <ul class="nav nav-pills nav-fill p-3" id="profileTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active d-flex align-items-center justify-content-center" 
-                        id="view-profile-tab" data-bs-toggle="tab" data-bs-target="#view-profile" 
-                        type="button" role="tab" aria-selected="true">
-                    <i class="fas fa-user-circle me-2"></i> View Profile
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link d-flex align-items-center justify-content-center" 
-                        id="edit-profile-tab" data-bs-toggle="tab" data-bs-target="#edit-profile" 
-                        type="button" role="tab" aria-selected="false">
-                    <i class="fas fa-edit me-2"></i> Edit Profile
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link d-flex align-items-center justify-content-center" 
-                        id="change-password-tab" data-bs-toggle="tab" data-bs-target="#change-password" 
-                        type="button" role="tab" aria-selected="false">
-                    <i class="fas fa-key me-2"></i> Change Password
-                </button>
-            </li>
-        </ul>
+        <ul class="nav nav-pills p-3 justify-content-center" id="profileTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active d-flex align-items-center justify-content-center" 
+                id="view-profile-tab" data-bs-toggle="tab" data-bs-target="#view-profile" 
+                type="button" role="tab" aria-selected="true">
+            <i class="fas fa-user-circle me-2"></i> View Profile
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link d-flex align-items-center justify-content-center" 
+                id="edit-profile-tab" data-bs-toggle="tab" data-bs-target="#edit-profile" 
+                type="button" role="tab" aria-selected="false">
+            <i class="fas fa-edit me-2"></i> Edit Profile
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link d-flex align-items-center justify-content-center" 
+                id="change-password-tab" data-bs-toggle="tab" data-bs-target="#change-password" 
+                type="button" role="tab" aria-selected="false">
+            <i class="fas fa-key me-2"></i> Change Password
+        </button>
+    </li>
+</ul>
 
         <div class="tab-content p-4" id="profileTabsContent">
             {{-- View Profile Tab --}}
@@ -204,7 +302,7 @@
                                 <div class="profile-info-item">
                                     <div class="profile-info-label">Role:</div>
                                     <div class="profile-info-value">
-                                        <span class="badge bg-primary">{{ ucfirst($user['role_id']['name']) }}</span>
+                                        <span class="badge bg-primary text-white">{{ ucfirst($user['role_id']['name']) }}</span>
                                     </div>
                                 </div>
                                 @endif
@@ -213,11 +311,11 @@
                                     <div class="profile-info-label">Status:</div>
                                     <div class="profile-info-value">
                                         @if(isset($user['status']))
-                                            <span class="badge {{ $user['status'] ? 'bg-success' : 'bg-danger' }}">
+                                            <span class="text-white badge {{ $user['status'] ? 'bg-success' : 'bg-danger' }}">
                                                 {{ $user['status'] ? 'Active' : 'Inactive' }}
                                             </span>
                                         @else
-                                            <span class="badge bg-secondary">Unknown</span>
+                                            <span class="badge bg-secondary text-white">Unknown</span>
                                         @endif
                                     </div>
                                 </div>
@@ -362,7 +460,6 @@
         </div>
     </div>
 </main>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Profile form submission with SweetAlert confirmation

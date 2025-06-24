@@ -126,14 +126,11 @@
                 <div class="card mb-4">
                     <div class="card-body">
                         <div class="row text-center">
-                            <div class="col-6">
+                            <div class="col-12">
                                 <h4 class="text-success mb-1" id="successCount">0</h4>
                                 <small class="text-muted">Successful</small>
                             </div>
-                            <div class="col-6">
-                                <h4 class="text-danger mb-1" id="errorCount">0</h4>
-                                <small class="text-muted">Errors</small>
-                            </div>
+                         
                         </div>
                     </div>
                 </div>
@@ -211,16 +208,17 @@
                 this.html5QrCode = null;
                 this.isScanning = false;
                 this.successCount = 0;
-                this.errorCount = 0;
                 this.currentCameraId = null;
                 this.cameras = [];
                 this.eventId = '{{ $data['event']['_id'] }}';
-
+this.scannedParticipants = @json($data['scanned_participants'] ?? []);
                 this.initializeElements();
                 this.bindEvents();
                 this.loadCameras();
+                this.updateRecentScansList();
             }
 
+            
             initializeElements() {
                 this.startBtn = document.getElementById('startScanner');
                 this.stopBtn = document.getElementById('stopScanner');
@@ -230,7 +228,6 @@
                 this.resultDiv = document.getElementById('scanResult');
                 this.recentScansDiv = document.getElementById('recentScans');
                 this.successCountSpan = document.getElementById('successCount');
-                this.errorCountSpan = document.getElementById('errorCount');
                 this.manualForm = document.getElementById('manualScanForm');
                 this.qrFrame = document.querySelector('.qr-frame');
             }
@@ -427,115 +424,81 @@
             }
 
             handleScanSuccess(result) {
-                this.successCount++;
-                this.successCountSpan.textContent = this.successCount;
+    const participant = result.participant;
+    
+    // Simpan ke array scannedParticipants
+    const scannedData = {
+        name: participant.name,
+        email: participant.email,
+        session: participant.session.title,
+        session_id: participant.session._id,
+        scanned_at: new Date().toISOString(),
+        user_id: participant.user_id
+    };
+    
+    this.scannedParticipants.push(scannedData);
+    
+    // Update scan result
+    this.updateScanResult(`
+        <div class="text-success">
+            <i class="bx bx-check-circle" style="font-size: 3rem;"></i>
+            <h6 class="mt-2 mb-1">${participant.name}</h6>
+            <small class="text-muted">${participant.email}</small>
+            <br><small class="text-info">${participant.session.title}</small>
+        </div>
+    `, 'success');
 
-                const participant = result.participant;
+    // Update recent scans dengan data yang disimpan
+    this.updateRecentScansList();
 
-                // Update scan result
-                this.updateScanResult(`
-                    <div class="text-success">
-                        <i class="bx bx-check-circle" style="font-size: 3rem;"></i>
-                        <h6 class="mt-2 mb-1">${participant.name}</h6>
-                        <small class="text-muted">${participant.email}</small>
-                    </div>
-                `, 'success');
+    // Show success modal
+    this.showSuccessModal(participant);
 
-                // Add to recent scans
-                this.addRecentScan({
-                    name: participant.name,
-                    email: participant.email,
-                    session: participant.session.title,
-                    time: new Date().toLocaleTimeString(),
-                    status: 'success'
-                });
+    // Show toast notification
+    this.showAlert('success', 'Check-in berhasil untuk ' + participant.name);
+}
 
-                // Show success modal
-                this.showSuccessModal(participant);
+updateRecentScansList() {
+    if (this.scannedParticipants.length === 0) {
+        this.recentScansDiv.innerHTML = `
+            <div class="text-center text-muted py-3">
+                <i class="bx bx-time" style="font-size: 2rem; opacity: 0.3;"></i>
+                <p class="mt-2 mb-0">No recent scans</p>
+            </div>
+        `;
+        return;
+    }
 
-                // Show Laravel success message
-                this.showAlert('success', 'Check-in berhasil untuk ' + participant.name);
-            }
+    // Tampilkan 10 scan terakhir
+    const recentScans = this.scannedParticipants.slice(-10).reverse();
+    
+    this.recentScansDiv.innerHTML = recentScans.map(scan => `
+        <div class="scan-item p-3 mb-2 bg-light-success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">${scan.name}</h6>
+                    <small class="text-muted">${scan.email}</small><br>
+                    <small class="text-info">${scan.session}</small>
+                </div>
+                <div class="text-end">
+                    <i class="bx bx-check-circle text-success"></i><br>
+                    <small class="text-muted">${new Date(scan.scanned_at).toLocaleTimeString()}</small>
+                </div>
+            </div>
+        </div>
+    `).join('');
 
-            handleScanError(errorMessage) {
-                this.errorCount++;
-                this.errorCountSpan.textContent = this.errorCount;
+    // Update counter
+    this.successCountSpan.textContent = this.scannedParticipants.length;
+}
 
-                // Update scan result
-                this.updateScanResult(`
-                    <div class="text-danger">
-                        <i class="bx bx-x-circle" style="font-size: 3rem;"></i>
-                        <p class="mt-2 mb-0">Scan Failed</p>
-                        <small>${errorMessage}</small>
-                    </div>
-                `, 'danger');
-
-                // Add to recent scans
-                this.addRecentScan({
-                    error: errorMessage,
-                    time: new Date().toLocaleTimeString(),
-                    status: 'error'
-                });
-
-                // Show error modal
-                this.showErrorModal(errorMessage);
-
-                // Show Laravel error message
-                this.showAlert('error', errorMessage);
-            }
-
+        
             updateScanResult(content, type) {
                 this.resultDiv.innerHTML = content;
                 this.resultDiv.className = `scan-result text-center py-3 ${type === 'success' ? 'success-animation' : ''}`;
             }
 
-            addRecentScan(scanData) {
-                // Remove "no recent scans" message if present
-                if (this.recentScansDiv.querySelector('.text-muted')) {
-                    this.recentScansDiv.innerHTML = '';
-                }
-
-                const scanItem = document.createElement('div');
-                scanItem.className = `scan-item p-3 mb-2 ${scanData.status === 'success' ? 'bg-light-success' : 'bg-light-danger'}`;
-
-                if (scanData.status === 'success') {
-                    scanItem.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">${scanData.name}</h6>
-                                <small class="text-muted">${scanData.email}</small><br>
-                                <small class="text-info">${scanData.session}</small>
-                            </div>
-                            <div class="text-end">
-                                <i class="bx bx-check-circle text-success"></i><br>
-                                <small class="text-muted">${scanData.time}</small>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    scanItem.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1 text-danger">Scan Error</h6>
-                                <small class="text-muted">${scanData.error}</small>
-                            </div>
-                            <div class="text-end">
-                                <i class="bx bx-x-circle text-danger"></i><br>
-                                <small class="text-muted">${scanData.time}</small>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                this.recentScansDiv.insertBefore(scanItem, this.recentScansDiv.firstChild);
-
-                // Keep only last 10 scans
-                const scanItems = this.recentScansDiv.querySelectorAll('.scan-item');
-                if (scanItems.length > 10) {
-                    scanItems[scanItems.length - 1].remove();
-                }
-            }
-
+            
             showSuccessModal(participant) {
                 const modalContent = document.getElementById('successModalContent');
                 modalContent.innerHTML = `
